@@ -56,6 +56,8 @@
   @keyframes pinch { from { transform:translate(0,0) } to { transform:translate(-22px,-14px) } }
   @keyframes pinch2 { from { transform:translate(0,0) } to { transform:translate(22px,14px) } }
   @keyframes hintfade { 0%,70% { opacity:1 } 100% { opacity:0 } }
+  #gpsstate { position:absolute; right:8px; top:8px; z-index:4; background:rgba(11,26,58,.85); color:#ffd58a; border-radius:10px; padding:6px 10px; font-size:12px; pointer-events:none; }
+  #svgwrap.tools #gpsstate { top:48px; }
   #modehint { position:absolute; left:8px; right:8px; bottom:8px; z-index:5; background:rgba(11,26,58,.92); color:#ffd58a; border-radius:8px; padding:6px 10px; font-size:12px; display:none; }
   #hud { flex:none; background:var(--card); border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)/2); }
   #hud .top { display:flex; align-items:center; gap:12px; }
@@ -103,6 +105,7 @@
       <div id="svgwrap">
         <div class="tb l"><button id="compassbtn">🧭</button><button id="herebtn">📍 여기</button><button id="calbtn">⚙ 보정</button></div>
         <div class="tb r"><button id="gpsbtn">📡 GPS</button></div>
+        <div id="gpsstate">📡 위치 확인 중…</div>
         <div id="modehint"></div>
         <div id="pinchhint"><div class="box"><svg viewBox="0 0 90 70"><circle class="f" cx="35" cy="42" r="9"/><circle class="f f2" cx="55" cy="28" r="9"/></svg>두 손가락으로 확대</div></div>
         <svg id="svg" preserveAspectRatio="xMidYMid meet"></svg>
@@ -373,7 +376,7 @@ function onTap(e) {
     let best=null, bd=Infinity; for (const k in nodeEls) { const d=Math.hypot(N[k].P[0]-P[0], N[k].P[1]-P[1]); if (d<bd) { bd=d; best=k; } }
     if (best && bd < 70) goTo(best); return;
   }
-  if (mode==='here') { pos = { ...pxToGeo(P), acc:8, manual:true }; setMode('none'); $('#gpsbtn').textContent='📡 GPS로 복귀'; drawMe(); update(); renderNow(); }
+  if (mode==='here') { pos = { ...pxToGeo(P), acc:8, manual:true }; gpsState(''); setMode('none'); $('#gpsbtn').textContent='📡 GPS로 복귀'; drawMe(); update(); renderNow(); }
   else if (mode==='cal') {
     if (!gps) { $('#modehint').textContent='GPS 위치가 아직 없습니다. 잠시 후 다시 탭하세요'; return; }
     const extra = AF.extra.concat([{ P, lat:gps.lat, lng:gps.lng, acc:Math.round(gps.acc) }]); localStorage.setItem('calib', JSON.stringify(extra));
@@ -383,10 +386,14 @@ function onTap(e) {
 
 // ---------- GPS / compass ----------
 let pos=null, gps=null, heading=null, target=null, watchId=null;
+let gpsDenied = false;
+function gpsState(t) { const e=$('#gpsstate'); e.style.display = t ? 'block' : 'none'; e.textContent = t||''; }
 function startGps() {
-  if (!navigator.geolocation) { $('#gpsbtn').textContent='GPS 미지원'; return; }
-  $('#gpsbtn').textContent='📡 검색 중…';
+  if (!navigator.geolocation) { $('#gpsbtn').textContent='GPS 미지원'; gpsState('이 기기는 GPS 미지원'); return; }
+  if (watchId) navigator.geolocation.clearWatch(watchId);
+  $('#gpsbtn').textContent='📡 검색 중…'; gpsDenied=false; if (!pos) gpsState('📡 위치 확인 중…');
   watchId = navigator.geolocation.watchPosition(p => {
+    if (!pos?.manual) gpsState('');
     const raw = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy };
     if (p.coords.heading!=null && p.coords.speed>0.5) heading=p.coords.heading;
     // 1) 저역 필터: 정확도가 나쁠수록 이전 위치를 더 신뢰 (실내에서 튀는 것 완화)
@@ -399,8 +406,13 @@ function startGps() {
       $('#gpsbtn').textContent = `📡 ±${Math.round(raw.acc)}m${pos.snapped?' · 경로':''}`;
       drawMe(); update(); if ($('#now').classList.contains('on')) renderNow(); if ($('#sched').classList.contains('on')) renderSched();
     }
-  }, e => { $('#gpsbtn').textContent='📡 '+(e.code===1?'권한 거부':'오류'); }, { enableHighAccuracy:true, maximumAge:2000, timeout:15000 });
+  }, e => { $('#gpsbtn').textContent='📡 '+(e.code===1?'권한 거부':'오류');
+    if (e.code===1) { gpsDenied=true; gpsState('위치 권한이 꺼져 있습니다 · 화면을 탭하면 다시 요청 · 계속 안 되면 설정 → Safari → 위치 → 허용'); }
+    else if (!pos) gpsState('📡 위치 신호 약함 · 다시 시도 중…');
+  }, { enableHighAccuracy:true, maximumAge:2000, timeout:15000 });
 }
+// 첫 터치(사용자 제스처)에서 위치 요청을 한 번 더 — iOS 홈화면 앱은 제스처 안에서 요청해야 팝업이 확실히 뜸
+document.addEventListener('touchend', () => { if (!pos || gpsDenied) startGps(); }, { capture:true, passive:true });
 $('#gpsbtn').onclick = () => { if (pos?.manual) { pos = gps ? {...gps} : null; $('#gpsbtn').textContent = gps?`📡 ±${Math.round(gps.acc)}m`:'📡 검색 중…'; drawMe(); update(); renderNow(); }
   else if (!watchId) startGps(); else if (pos) fitView([geoToPx(pos)]); };
 // 나침반: Android(갤럭시)는 권한 없이 즉시 ON. iOS는 사용자 터치가 있어야 권한 요청이 가능하므로
@@ -464,7 +476,7 @@ function setArrow(b) { const rel = heading!=null ? b-heading : b; $('#arrow').st
 // ---------- boot ----------
 function tick() { $('#clock').firstChild.nodeValue = nowState().hhmm; }
 buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched(); $('#svgwrap').classList.toggle('tools', tools);
-if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:la,lng:lg,acc:8,manual:true}; watchId=-1; drawMe(); renderNow(); } else startGps();   // 개발용 ?pos=lat,lng
+if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:la,lng:lg,acc:8,manual:true}; watchId=-1; gpsState(''); drawMe(); renderNow(); } else startGps();   // 개발용 ?pos=lat,lng
 if (q.get('tab')) showPanel(q.get('tab'));
 if (q.get('debug')) svg.classList.add('debug');   // ?debug=1 → 도보 그래프 표시
 setInterval(()=>{ tick(); renderNow(); if ($('#sched').classList.contains('on')) renderSched(); }, 30000);
