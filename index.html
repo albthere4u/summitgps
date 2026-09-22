@@ -358,7 +358,9 @@ function setArrow(b) { const rel = heading!=null ? b-heading : b; $('#arrow').st
 
 // ---------- boot ----------
 function tick() { $('#clock').firstChild.nodeValue = nowState().hhmm; }
-buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched(); startGps();
+buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched();
+if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:la,lng:lg,acc:8,manual:true}; watchId=-1; drawMe(); renderNow(); } else startGps();   // 개발용 ?pos=lat,lng
+if (q.get('tab')) showPanel(q.get('tab'));
 setInterval(()=>{ tick(); renderNow(); if ($('#sched').classList.contains('on')) renderSched(); }, 30000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
