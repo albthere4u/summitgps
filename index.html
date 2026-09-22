@@ -193,6 +193,8 @@ function autoTarget() {
   return next ? next.v : (live ? live.v : null);
 }
 
+const gmapsUrl = i => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(i.gmaps)}&travelmode=${i.mode||'walking'}`;
+const gmapsBtn = i => i.gmaps ? `<a class="go" style="background:#4285f4;color:#fff;display:grid;place-items:center;text-decoration:none" href="${gmapsUrl(i)}" target="_blank" rel="noopener">구글\n지도</a>` : '';
 // ---------- NOW ----------
 let selectedDay = null;
 function renderNow() {
@@ -215,8 +217,8 @@ function card(i, kind, until) {
     <div class="row"><div class="tag">${tag}</div><div class="until">${until}</div></div>
     <div class="time">${i.s} – ${i.e}</div><div class="title">${i.t}</div>${i.sub?`<div class="sub">${i.sub}</div>`:''}
     <div class="place">📍 ${v?v.name:i.place}${i.room?` · ${i.room}`:''}${v?fl(v.floor):''}</div>
-    ${v?distLine(i.v):`<div class="sub">리조트 밖 · 안내 없음</div>`}</div>
-    ${v?`<button class="go" onclick="goTo('${i.v}')">여기\n가기</button>`:''}</div>`;
+    ${v?distLine(i.v):`<div class="sub">리조트 밖 · 구글 지도로 길찾기${i.mode==='driving'?' (차량)':' (도보)'}</div>`}</div>
+    ${v?`<button class="go" onclick="goTo('${i.v}')">여기\n가기</button>`:gmapsBtn(i)}</div>`;
 }
 function distLine(k) {
   if (!pos) return `<div class="sub">📡 ${watchId?'위치 확인 중…':'화면을 탭하면 위치 권한을 요청합니다'}</div>`;
@@ -234,7 +236,7 @@ function schedHtml() {
     const v = i.v ? N[i.v] : null;
     html += `<div class="item ${cls}"><div class="time">${i.s}<br>${i.e}</div><div style="flex:1;min-width:0"><div class="title">${i.t}</div>${i.sub?`<div class="sub">${i.sub}</div>`:''}
       <div class="sub">📍 ${v?v.name:i.place}${i.room?` · ${i.room}`:''}${v?fl(v.floor):''}</div></div>
-      ${v?`<button class="go" style="width:56px;height:56px;font-size:13px" onclick="goTo('${i.v}')">여기\n가기</button>`:''}</div>`;
+      ${v?`<button class="go" style="width:56px;height:56px;font-size:13px" onclick="goTo('${i.v}')">여기\n가기</button>`:gmapsBtn(i).replace('class="go"','class="go" style="width:56px;height:56px;font-size:13px;')}</div>`;
   });
   return html;
 }
