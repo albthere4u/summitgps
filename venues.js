@@ -2,7 +2,7 @@
 // 현장 측정 좌표. floor: 'L'(로비층) | '1'(로비 아래층) | 'out'(실외)
 // venue:true 인 노드만 목적지로 선택 가능. 나머지는 경로 연결용 경유점.
 window.NODES = {
-  halonaKai:    { name:'Halona Kai Lawn',            lat:20.9128273, lng:-156.6922560, floor:'L',  venue:true, note:'잔디 · 로비층 높이' },
+  halonaKai:    { name:'Halona Kai Lawn',            lat:20.9129391, lng:-156.6922132, floor:'L',  venue:true, note:'잔디 입구 · Atrium Tower 옆' },
   lahaina12:    { name:'Lahaina Room 1 & 2',         lat:20.9124108, lng:-156.6915433, floor:'L',  venue:true, note:'Lahaina Tower 로비층' },
   lahaina34:    { name:'Lahaina Room 3 & 4',         lat:20.9123215, lng:-156.6913794, floor:'L',  venue:true, note:'Lahaina Tower 로비층' },
   lahElev:      { name:'Lahaina Tower 엘리베이터',    lat:20.9125539, lng:-156.6912768, floor:'L',  venue:true, note:'미팅룸 351·364(3층) / 479(4층) / 579(5층)' },
@@ -14,7 +14,7 @@ window.NODES = {
   recCenter:    { name:'레크리에이션 센터 (수영장 앞)', lat:20.9128981, lng:-156.6926695, floor:'1',  venue:true, note:'수영장 앞' },
   jacuzzi:      { name:'자쿠지',                     lat:20.9131361, lng:-156.6933377, floor:'1',  venue:true, note:'바다쪽' },
   smoking:      { name:'흡연 구역',                   lat:20.9139200, lng:-156.6929196, floor:'out',venue:true, note:'실외' },
-  atriumElev:   { name:'Atrium Tower 엘리베이터',     lat:20.9135683, lng:-156.6929377, floor:'1',  venue:true, note:'1층' },
+  napiliElev:   { name:'Napili Tower 엘리베이터',     lat:20.9135683, lng:-156.6929377, floor:'1',  venue:true, note:'1층' },
 };
 
 // ===== 도보 이동로(간선) — 안내도 회색 점선 기준 추정. [from, to, 안내문구(선택)] =====
@@ -34,18 +34,19 @@ window.EDGES = [
   ['lahaina12','halonaKai'],
   ['halonaKai','recCenter'],
   ['recCenter','jacuzzi'],
-  ['recCenter','atriumElev'],
-  ['atriumElev','smoking'],
-  ['jacuzzi','atriumElev'],
+  ['recCenter','napiliElev'],
+  ['napiliElev','smoking'],
+  ['jacuzzi','napiliElev'],
 ];
 
 // ===== 도식 안내도 블록 (미터 좌표: x=북쪽으로 +, y=동쪽(내륙)으로 +) =====
 // 기준점 lat0/lng0 은 index.html 의 ORIGIN. 값은 눈대중 — 자유롭게 조정.
 window.BLOCKS = [
   { kind:'sea',   label:'바다 (Kāʻanapali Beach)', x:-20, y:-30, w:320, h:40 },
-  { kind:'bldg',  label:'Atrium Tower',          x:175, y:60,  w:70,  h:45 },
+  { kind:'bldg',  label:'Napili Tower',          x:175, y:60,  w:70,  h:45 },
+  { kind:'bldg',  label:'Atrium Tower',          x:105, y:180, w:70,  h:40 },
   { kind:'pool',  label:'Lahaina Pool',          x:120, y:35,  w:60,  h:45 },
-  { kind:'lawn',  label:'Halona Kai Lawn',       x:95,  y:125, w:65,  h:45 },
+  { kind:'lawn',  label:'Halona Kai Lawn',       x:110, y:128, w:55,  h:45 },
   { kind:'bldg',  label:'Lahaina Tower (L층)',   x:50,  y:205, w:65,  h:60 },
   { kind:'bldg1', label:'컨퍼런스 구역 (1층)',    x:0,   y:230, w:55,  h:70 },
 ];

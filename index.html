@@ -222,7 +222,7 @@ svg.appendChild(el('text',{class:'rose',x:-20,y:-22},'▲ 바다 / 서'));
 for (const [a,b] of E) svg.appendChild(el('line',{ class:'edge', x1:P[a].x, y1:P[a].y, x2:P[b].x, y2:P[b].y }));
 const routeEl = el('polyline',{ class:'route', points:'' }); svg.appendChild(routeEl);
 // nodes + labels (겹치는 라벨은 오프셋)
-const OFF = { mediaLounge:[-22,-6], monarchy14:[3,-9], monarchy57:[3,9], sunsetTerrace:[3,3], lahElev:[3,-4], lahaina12:[-8,-6], lahaina34:[-10,9], lahElev1:null };
+const OFF = { mediaLounge:[-34,-4], monarchy14:[4,-9], monarchy57:[4,10], sunsetTerrace:[4,3], lahElev:[4,-4], lahaina12:[-4,-8], lahaina34:[-14,11], halonaKai:[4,-6], recCenter:[4,-4], jacuzzi:[-14,-6], napiliElev:[4,-6], smoking:[4,3] };
 const nodeEls = {};
 for (const k in N) {
   if (!N[k].venue) continue;
