@@ -108,7 +108,7 @@
       <div id="svgwrap">
         <div class="tb l"><button id="compassbtn">🧭</button><button id="herebtn">📍 여기</button><button id="calbtn">⚙ 보정</button></div>
         <div class="tb r"><button id="gpsbtn">📡 GPS</button></div>
-        <div id="gpsstate">📡 위치 확인 중…</div>
+        <div id="gpsstate">📡 화면을 탭하면 위치 권한을 요청합니다</div>
         <div id="zoomctl"><button id="zin">＋</button><button id="zout">－</button><span>두 손가락·더블탭<br>확대 가능</span></div>
         <div id="modehint"></div>
         <div id="pinchhint"><div class="box"><svg viewBox="0 0 90 70"><circle class="f" cx="35" cy="42" r="9"/><circle class="f f2" cx="55" cy="28" r="9"/></svg>두 손가락으로 벌리면 확대<br><small style="font-weight:400">더블탭 · ＋/－ 버튼도 가능</small></div></div>
@@ -180,7 +180,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => showPanel
 function showPanel(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id===id));
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.p===id));
-  if (id==='guide') { if (!watchId) startGps(); if (!target) { const a=autoTarget(); if (a) goTo(a); else fitView(); }
+  if (id==='guide') { if (!target) { const a=autoTarget(); if (a) goTo(a); else fitView(); }
     let seen=0; try { seen=+localStorage.getItem('pinchHint')||0; } catch {}
     if (seen<5) { try { localStorage.setItem('pinchHint', seen+1); } catch {}
       const h=$('#pinchhint'); h.classList.remove('show'); void h.offsetWidth; h.classList.add('show'); setTimeout(()=>h.classList.remove('show'), 3000); } }
@@ -219,7 +219,7 @@ function card(i, kind, until) {
     ${v?`<button class="go" onclick="goTo('${i.v}')">여기\n가기</button>`:''}</div>`;
 }
 function distLine(k) {
-  if (!pos) return `<div class="sub">📡 위치 확인 중… (안내도에서 📍여기 로 직접 지정 가능)</div>`;
+  if (!pos) return `<div class="sub">📡 ${watchId?'위치 확인 중…':'화면을 탭하면 위치 권한을 요청합니다'}</div>`;
   const r = routeTo(k);
   if (r.total < 20) return `<div class="sub" style="color:var(--ok)">✅ 바로 여기 (${Math.round(r.total)}m)</div>`;
   return `<div class="sub">🚶 ${pos.manual?'지정 위치':'현재 위치'}에서 <b style="color:var(--fg)">${Math.round(r.total)}m</b> · 도보 약 ${Math.max(1,Math.round(r.total/60))}분${r.stairs?' · 계단 포함':''}</div>`;
@@ -419,14 +419,13 @@ function startGps() {
 }
 // 시작: 위치는 즉시 요청(브라우저 취소/허용 창), 동작·방향(iOS)은 제스처가 필요하므로 첫 터치에서 요청.
 // 다음 세션을 목적지로 잡아두고 장소별 안내로 진입.
+// 앱 화면을 먼저 보여주고, 사용자의 첫 탭(어디든)에서 위치 + 동작·방향 권한을 한 번에 요청.
+// 제스처 안에서 요청하므로 Safari / Chrome / 홈화면 앱 모두 같은 순서로 취소/허용 창이 뜬다.
 function boot() {
-  startGps();
   const a = autoTarget(); if (a) setTarget(a);
   showPanel('sched');
-  if (typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission) {
-    const once = () => { enableCompass(); document.removeEventListener('touchend', once, true); document.removeEventListener('click', once, true); };
-    document.addEventListener('touchend', once, true); document.addEventListener('click', once, true);
-  }
+  const once = () => { document.removeEventListener('touchend', once, true); document.removeEventListener('click', once, true); startGps(); enableCompass(); };
+  document.addEventListener('touchend', once, true); document.addEventListener('click', once, true);
 }
 // 이후에도 위치가 없거나 거부 상태면 터치 시 재요청
 document.addEventListener('touchend', () => { if (!pos || gpsDenied) startGps(); }, { capture:true, passive:true });
