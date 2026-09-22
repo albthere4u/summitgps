@@ -306,11 +306,14 @@ function clampVB() {
 let shownVB = null, animId = null;
 function applyVB() { svg.setAttribute('viewBox', shownVB.join(' ')); scaleMe(); }
 // 즉시 반영(핀치/드래그 중) 또는 부드럽게 보간(휠/더블탭/이동)
+// smooth: false=즉시, true=느긋한 보간(0.22), 숫자=보간 계수(제스처 중엔 0.5 로 지연 최소화)
 function setVB(smooth) {
   clampVB();
   if (!shownVB || !smooth) { shownVB=[...VB]; applyVB(); return; }
-  cancelAnimationFrame(animId);
-  const step = () => { let done=true; shownVB = shownVB.map((v,i)=>{ const t=VB[i], nv=v+(t-v)*0.22; if (Math.abs(t-nv)>0.5) done=false; return done&&Math.abs(t-nv)<=0.5?t:nv; }); applyVB(); if (!done) animId=requestAnimationFrame(step); else { shownVB=[...VB]; applyVB(); } };
+  const k = typeof smooth==='number' ? smooth : 0.22;
+  if (animId) return;   // 이미 보간 루프가 돌고 있으면 목표(VB)만 갱신
+  const step = () => { let maxd=0; shownVB = shownVB.map((v,i)=>{ const nv=v+(VB[i]-v)*k; maxd=Math.max(maxd,Math.abs(VB[i]-nv)); return nv; });
+    if (maxd<0.3) { shownVB=[...VB]; applyVB(); animId=null; } else { applyVB(); animId=requestAnimationFrame(step); } };
   animId = requestAnimationFrame(step);
 }
 svg.appendChild(el('image',{ href:IMG.src, x:0, y:0, width:IMG.w, height:IMG.h }));
@@ -334,11 +337,13 @@ let ptrs = new Map(), pinch0 = null, drag0 = null, moved = 0;
 svg.addEventListener('pointerdown', e => { svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0;
   if (ptrs.size===1) drag0={x:e.clientX,y:e.clientY,vb:[...VB]}; if (ptrs.size===2) { const [a,b]=[...ptrs.values()]; pinch0={d:Math.hypot(a[0]-b[0],a[1]-b[1]),vb:[...VB],mid:[(a[0]+b[0])/2,(a[1]+b[1])/2]}; } });
 svg.addEventListener('pointermove', e => { if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId,[e.clientX,e.clientY]); const sc = Math.max(VB[2]/svg.clientWidth, VB[3]/svg.clientHeight);
-  if (ptrs.size===1 && drag0) { const dx=e.clientX-drag0.x, dy=e.clientY-drag0.y; moved=Math.max(moved,Math.hypot(dx,dy)); VB=[drag0.vb[0]-dx*sc, drag0.vb[1]-dy*sc, VB[2], VB[3]]; setVB(); }
-  else if (ptrs.size===2 && pinch0) { const [a,b]=[...ptrs.values()]; const d=Math.hypot(a[0]-b[0],a[1]-b[1]); const z=Math.max(.5,Math.min(3,pinch0.d/d)); moved=99;
+  if (ptrs.size===1 && drag0) { const dx=e.clientX-drag0.x, dy=e.clientY-drag0.y; moved=Math.max(moved,Math.hypot(dx,dy)); VB=[drag0.vb[0]-dx*sc, drag0.vb[1]-dy*sc, VB[2], VB[3]]; setVB(0.5); }
+  else if (ptrs.size===2 && pinch0) { const [a,b]=[...ptrs.values()]; const d=Math.hypot(a[0]-b[0],a[1]-b[1]); const z=Math.max(.2,Math.min(5,pinch0.d/d)); moved=99;
     const w=pinch0.vb[2]*z, h=pinch0.vb[3]*z, r=svg.getBoundingClientRect(), fx=(pinch0.mid[0]-r.left)/r.width, fy=(pinch0.mid[1]-r.top)/r.height;
-    VB=[pinch0.vb[0]+pinch0.vb[2]*fx-w*fx, pinch0.vb[1]+pinch0.vb[3]*fy-h*fy, w, h]; setVB(); } });
+    const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2], s2=Math.max(w/r.width, h/r.height);   // 두 손가락 중심 이동 = 팬
+    VB=[pinch0.vb[0]+pinch0.vb[2]*fx-w*fx-(mid[0]-pinch0.mid[0])*s2, pinch0.vb[1]+pinch0.vb[3]*fy-h*fy-(mid[1]-pinch0.mid[1])*s2, w, h]; setVB(0.5); } });
 svg.addEventListener('pointerup', e => { const wasTap = ptrs.size===1 && moved<8; ptrs.delete(e.pointerId); drag0=null; if (ptrs.size<2) pinch0=null;
+  if (ptrs.size===1) { const [x,y]=[...ptrs.values()][0]; drag0={x,y,vb:[...VB]}; moved=99; }
   if (wasTap) { const now=Date.now(); if (now-lastTap<300 && mode==='none') { const P=clientToPx(e), z=0.5; VB=[P[0]-(P[0]-VB[0])*z, P[1]-(P[1]-VB[1])*z, VB[2]*z, VB[3]*z]; setVB(true); lastTap=0; return; } lastTap=now; onTap(e); } });
 svg.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); drag0=null; pinch0=null; });
 svg.addEventListener('wheel', e => { e.preventDefault(); const z=e.deltaY>0?1.15:0.87, r=svg.getBoundingClientRect(), fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height; VB=[VB[0]+VB[2]*fx*(1-z), VB[1]+VB[3]*fy*(1-z), VB[2]*z, VB[3]*z]; setVB(true); }, {passive:false});
