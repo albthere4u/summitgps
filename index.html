@@ -42,7 +42,8 @@
   #guide.on { display:flex; }
   #svgwrap { flex:1; min-height:0; position:relative; background:#dfe9f3; overflow:hidden; }
   #svgwrap svg { width:100%; height:100%; display:block; touch-action:none; }
-  .tb { position:absolute; top:8px; z-index:5; display:flex; gap:6px; }
+  .tb { position:absolute; top:8px; z-index:5; display:none; gap:6px; }
+  #svgwrap.tools .tb { display:flex; }
   .tb.l { left:8px; } .tb.r { right:8px; }
   .tb button { background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:7px 10px; font-size:12px; }
   .tb button.on { background:var(--acc); color:#1a1200; border-color:var(--acc); }
@@ -208,7 +209,7 @@ function card(i, kind, until) {
     <div class="time">${i.s} – ${i.e}</div><div class="title">${i.t}</div>${i.sub?`<div class="sub">${i.sub}</div>`:''}
     <div class="place">📍 ${v?v.name:i.place}${i.room?` · ${i.room}`:''}${v?fl(v.floor):''}</div>
     ${v?distLine(i.v):`<div class="sub">리조트 밖 · 안내 없음</div>`}</div>
-    ${v?`<button class="go" onclick="goTo('${i.v}')">여기로\n가기</button>`:''}</div>`;
+    ${v?`<button class="go" onclick="goTo('${i.v}')">여기\n가기</button>`:''}</div>`;
 }
 function distLine(k) {
   if (!pos) return `<div class="sub">📡 위치 확인 중… (안내도에서 📍여기 로 직접 지정 가능)</div>`;
@@ -226,11 +227,13 @@ function schedHtml() {
     const v = i.v ? N[i.v] : null;
     html += `<div class="item ${cls}"><div class="time">${i.s}<br>${i.e}</div><div style="flex:1;min-width:0"><div class="title">${i.t}</div>${i.sub?`<div class="sub">${i.sub}</div>`:''}
       <div class="sub">📍 ${v?v.name:i.place}${i.room?` · ${i.room}`:''}${v?fl(v.floor):''}</div></div>
-      ${v?`<button class="go" style="width:56px;height:56px;font-size:13px" onclick="goTo('${i.v}')">여기로\n가기</button>`:''}</div>`;
+      ${v?`<button class="go" style="width:56px;height:56px;font-size:13px" onclick="goTo('${i.v}')">여기\n가기</button>`:''}</div>`;
   });
   return html;
 }
-// 4) 전체 위치 보기: 장소별 리스트 + 여기로 가기
+let tools = false; try { tools = localStorage.getItem('tools')==='1'; } catch {}
+function setTools(on) { tools = !!on; try { localStorage.setItem('tools', on?'1':'0'); } catch {} $('#svgwrap').classList.toggle('tools', tools); renderSched(); }
+// 장소별 안내: 장소별 리스트 + 여기 가기
 function renderSched() {
   const n = nowState();
   let html = '';
@@ -241,9 +244,10 @@ function renderSched() {
     html += `<div class="card"><div class="body"><div class="row"><div class="title" style="margin:0">${v.name}</div>${fl(v.floor)}<div class="until">${d?`${Math.round(d.total)}m`:''}</div></div>
       ${v.note?`<div class="sub">${v.note}</div>`:''}
       ${uses.length?`<div class="sub" style="margin-top:4px">${uses.map(u=>'· '+u).join('<br>')}</div>`:''}</div>
-      <button class="go" onclick="goTo('${k}')">여기로\n가기</button></div>`;
+      <button class="go" onclick="goTo('${k}')">여기\n가기</button></div>`;
   }
-  html += `<details><summary>⚙ 보정 데이터 (${AF.n}점 · 추가 ${AF.extra.length}점)</summary><pre id="calpre">${JSON.stringify(AF.extra)}</pre>
+  html += `<label style="display:flex;align-items:center;gap:10px;margin:18px 0 6px;color:var(--dim);font-size:13px"><input type="checkbox" ${tools?'checked':''} onchange="setTools(this.checked)" style="width:20px;height:20px"> 보정 데이터 설정하기 (지도에 GPS·나침반·보정 버튼 표시)</label>`;
+  if (tools) html += `<details open><summary>⚙ 보정 데이터 (${AF.n}점 · 추가 ${AF.extra.length}점)</summary><pre id="calpre">${JSON.stringify(AF.extra)}</pre>
     <button onclick="navigator.clipboard?.writeText($('#calpre').textContent)">복사</button><button onclick="localStorage.removeItem('calib');fitAffine();renderSched();redraw()">추가점 초기화</button></details>`;
   $('#sched').innerHTML = html;
 }
@@ -459,7 +463,7 @@ function setArrow(b) { const rel = heading!=null ? b-heading : b; $('#arrow').st
 
 // ---------- boot ----------
 function tick() { $('#clock').firstChild.nodeValue = nowState().hhmm; }
-buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched();
+buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched(); $('#svgwrap').classList.toggle('tools', tools);
 if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:la,lng:lg,acc:8,manual:true}; watchId=-1; drawMe(); renderNow(); } else startGps();   // 개발용 ?pos=lat,lng
 if (q.get('tab')) showPanel(q.get('tab'));
 if (q.get('debug')) svg.classList.add('debug');   // ?debug=1 → 도보 그래프 표시
