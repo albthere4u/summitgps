@@ -14,7 +14,7 @@ window.NODES = {
   recCenter:    { name:'레크리에이션 센터 (수영장 앞)', lat:20.9128981, lng:-156.6926695, floor:'1',  venue:true, note:'수영장 앞' },
   jacuzzi:      { name:'자쿠지',                     lat:20.9131361, lng:-156.6933377, floor:'1',  venue:true, note:'바다쪽' },
   smoking:      { name:'흡연 구역',                   lat:20.9139200, lng:-156.6929196, floor:'out',venue:true, note:'실외' },
-  napiliElev:   { name:'Napili Tower 엘리베이터',     lat:20.9135683, lng:-156.6929377, floor:'1',  venue:true, note:'1층' },
+  atriumElev:   { name:'Atrium Tower 엘리베이터',     lat:20.9135683, lng:-156.6929377, floor:'1',  venue:true, note:'1층' },
 };
 
 // ===== 도보 이동로(간선) — 안내도 회색 점선 기준 추정. [from, to, 안내문구(선택)] =====
@@ -34,16 +34,16 @@ window.EDGES = [
   ['lahaina12','halonaKai'],
   ['halonaKai','recCenter'],
   ['recCenter','jacuzzi'],
-  ['recCenter','napiliElev'],
-  ['napiliElev','smoking'],
-  ['jacuzzi','napiliElev'],
+  ['recCenter','atriumElev'],
+  ['atriumElev','smoking'],
+  ['jacuzzi','atriumElev'],
 ];
 
 // ===== 도식 안내도 블록 (미터 좌표: x=북쪽으로 +, y=동쪽(내륙)으로 +) =====
 // 기준점 lat0/lng0 은 index.html 의 ORIGIN. 값은 눈대중 — 자유롭게 조정.
 window.BLOCKS = [
   { kind:'sea',   label:'바다 (Kāʻanapali Beach)', x:-20, y:-30, w:320, h:40 },
-  { kind:'bldg',  label:'Napili Tower',          x:170, y:60,  w:75,  h:45 },
+  { kind:'bldg',  label:'Atrium Tower',          x:175, y:60,  w:70,  h:45 },
   { kind:'pool',  label:'Lahaina Pool',          x:120, y:35,  w:60,  h:45 },
   { kind:'lawn',  label:'Halona Kai Lawn',       x:95,  y:125, w:65,  h:45 },
   { kind:'bldg',  label:'Lahaina Tower (L층)',   x:50,  y:205, w:65,  h:60 },
