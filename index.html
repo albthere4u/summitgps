@@ -268,7 +268,7 @@ for (const k in N) { if (!N[k].venue) continue; const o=OFF[k]||[18,10], g=el('g
   g.appendChild(el('text',{class:'lbl',x:N[k].P[0]+o[0],y:N[k].P[1]+o[1]}, N[k].name));
   gPins.appendChild(g); nodeEls[k]=g; }
 const meAcc = el('circle',{class:'meacc',r:0,cx:-9999,cy:-9999}), meG = el('g',{visibility:'hidden'});
-const meDot = el('circle',{class:'me',r:14,cx:0,cy:0}), meArr = el('path',{class:'me',d:'M0,-64 L38,16 L0,0 L-38,16 Z',visibility:'hidden'});
+const meDot = el('circle',{class:'me',r:11,cx:0,cy:0}), meArr = el('path',{class:'me',d:'M0,-44 L26,12 L0,0 L-26,12 Z',visibility:'hidden'});
 meG.append(meDot, meArr); svg.append(meAcc, meG);
 function drawCal() { gCal.innerHTML=''; AF.extra.forEach((c,i)=>{ gCal.appendChild(el('circle',{class:'cal',cx:c.P[0],cy:c.P[1],r:16})); gCal.appendChild(el('text',{class:'cal-t',x:c.P[0]+18,y:c.P[1]+8},`보정${i+1}`)); }); }
 function redraw() { buildGraph(); drawCal(); drawMe(); update(); }
@@ -358,8 +358,8 @@ function drawMe() {
   const cx=Math.max(-80,Math.min(IMG.w+80,P[0])), cy=Math.max(-80,Math.min(IMG.h+80,P[1]));
   meG.setAttribute('visibility','visible'); meDot.classList.toggle('manual', !!pos.manual); meArr.classList.toggle('manual', !!pos.manual);
   meAcc.setAttribute('cx',cx); meAcc.setAttribute('cy',cy); meAcc.setAttribute('r', pos.manual?0:(pos.snapped?6:Math.min(pos.acc,80))*AF.scale);
-  if (heading!=null) { meArr.setAttribute('visibility','visible'); meDot.setAttribute('r',10); meG.setAttribute('transform',`translate(${cx},${cy}) rotate(${screenAngle(heading)+90})`); }
-  else { meArr.setAttribute('visibility','hidden'); meDot.setAttribute('r',14); meG.setAttribute('transform',`translate(${cx},${cy})`); }
+  if (heading!=null) { meArr.setAttribute('visibility','visible'); meDot.setAttribute('r',7); meG.setAttribute('transform',`translate(${cx},${cy}) rotate(${screenAngle(heading)+90})`); }
+  else { meArr.setAttribute('visibility','hidden'); meDot.setAttribute('r',11); meG.setAttribute('transform',`translate(${cx},${cy})`); }
   if (!inside && !pos.manual) $('#gpsbtn').textContent = `📡 ±${Math.round(pos.acc)}m · 범위 밖`;
 }
 

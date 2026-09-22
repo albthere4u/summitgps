@@ -1,8 +1,8 @@
 // ================================================================
-// 안내도 기반 데이터. px 는 assets/resort-map-v2.png (1672x941) 위 픽셀 좌표.
+// 안내도 기반 데이터. px 는 assets/resort-map-v3.png (1672x941) 위 픽셀 좌표.
 // 배경 이미지에 라벨·핀이 이미 그려져 있으므로 앱은 작은 링 마커만 겹쳐 그린다.
 // ================================================================
-window.MAP_IMG = { src:'assets/resort-map-v2.png', w:1672, h:941 };
+window.MAP_IMG = { src:'assets/resort-map-v3.png', w:1672, h:941 };
 window.PX_SCALE = 1;
 
 // ----- GPS(위경도) ↔ 안내도 픽셀 보정점 (최소제곱 아핀변환) -----
@@ -27,7 +27,7 @@ window.NODES = {
   monarchy14:   { name:'Monarchy Ballroom 1-4',     px:[290,585],  floor:'1', venue:true, note:'로비에서 계단 ↓ · 키노트' },
   monarchy57:   { name:'Monarchy 5-7',              px:[350,663],  floor:'1', venue:true, note:'Monarchy 1-4 옆 · 데모' },
   lahElev:      { name:'Lahaina Tower 엘리베이터',   px:[528,668],  floor:'L', venue:true, note:'미팅룸 351·364(3층) / 479(4층) / 579(5층)' },
-  halonaKai:    { name:'Halona Kai Lawn',           px:[1030,540], floor:'L', venue:true, note:'Atrium Tower 옆 잔디 입구' },
+  halonaKai:    { name:'Halona Kai Lawn',           px:[990,540],  floor:'L', venue:true, note:'Atrium Tower 옆 잔디 입구' },
   atriumElev:   { name:'Atrium Tower 엘리베이터',    px:[962,650],  floor:'1', venue:true },
   recCenter:    { name:'레크리에이션 센터',           px:[1160,352], floor:'1', venue:true, note:'수영장 앞' },
   jacuzzi:      { name:'자쿠지',                    px:[1410,385], floor:'1', venue:true, note:'Napili Pool 옆' },
