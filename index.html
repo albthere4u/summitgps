@@ -61,12 +61,6 @@
   #zoomctl span { display:block; text-align:center; font-size:10px; color:#fff; background:rgba(11,26,58,.7); border-radius:6px; padding:2px 4px; }
   #gpsstate { position:absolute; right:8px; top:8px; z-index:4; background:rgba(11,26,58,.85); color:#ffd58a; border-radius:10px; padding:6px 10px; font-size:12px; pointer-events:none; }
   #svgwrap.tools #gpsstate { top:48px; }
-  #gate { position:fixed; inset:0; z-index:50; background:rgba(11,26,58,.96); display:none; place-items:center; padding:24px; }
-  #gate.show { display:grid; }
-  #gate .box { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 20px; max-width:340px; text-align:center; }
-  #gate h2 { margin:0 0 8px; font-size:18px; }
-  #gate p { color:var(--dim); font-size:13px; margin:0 0 16px; line-height:1.5; }
-  #gate button { width:100%; background:var(--acc); color:#1a1200; font-weight:700; border:0; border-radius:12px; padding:14px; font-size:16px; }
   #modehint { position:absolute; left:8px; right:8px; bottom:8px; z-index:5; background:rgba(11,26,58,.92); color:#ffd58a; border-radius:8px; padding:6px 10px; font-size:12px; display:none; }
   #hud { flex:none; background:var(--card); border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)/2); }
   #hud .top { display:flex; align-items:center; gap:12px; }
@@ -106,7 +100,6 @@
 </style>
 </head>
 <body>
-<div id="gate"><div class="box"><h2>위치 · 나침반 권한</h2><p>내 위치를 지도에 표시하고 방향을 안내하려면<br>위치 정보와 동작·방향 접근 권한이 필요합니다.<br>아래 버튼을 누르면 브라우저 권한 창이 뜹니다.</p><button id="gatebtn">허용하고 시작하기</button></div></div>
 <div id="app">
   <header><b>Snapdragon Summit 2026</b><div id="clock">--:--<small>HST</small></div></header>
   <main>
@@ -424,19 +417,19 @@ function startGps() {
     else if (!pos) gpsState('📡 위치 신호 약함 · 다시 시도 중…');
   }, { enableHighAccuracy:true, maximumAge:2000, timeout:15000 });
 }
-// 권한 게이트: 매 실행마다 사용자 버튼 탭(제스처) 안에서 위치+동작 권한을 함께 요청 → Safari/Chrome/홈화면 앱 모두 확실히 팝업
-function openGate() { $('#gate').classList.add('show'); }
-$('#gatebtn').onclick = async () => {
-  $('#gate').classList.remove('show');
-  try { navigator.geolocation?.getCurrentPosition(()=>{}, ()=>{}, { enableHighAccuracy:true, timeout:10000 }); } catch {}
+// 시작: 위치는 즉시 요청(브라우저 취소/허용 창), 동작·방향(iOS)은 제스처가 필요하므로 첫 터치에서 요청.
+// 다음 세션을 목적지로 잡아두고 장소별 안내로 진입.
+function boot() {
   startGps();
-  await enableCompass();
-  // 다음 세션을 목적지로 잡아두되(지도 탭 열면 경로 바로 표시), 화면은 장소별 안내로
   const a = autoTarget(); if (a) setTarget(a);
   showPanel('sched');
-};
+  if (typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission) {
+    const once = () => { enableCompass(); document.removeEventListener('touchend', once, true); document.removeEventListener('click', once, true); };
+    document.addEventListener('touchend', once, true); document.addEventListener('click', once, true);
+  }
+}
 // 이후에도 위치가 없거나 거부 상태면 터치 시 재요청
-document.addEventListener('touchend', () => { if (!$('#gate').classList.contains('show') && (!pos || gpsDenied)) startGps(); }, { capture:true, passive:true });
+document.addEventListener('touchend', () => { if (!pos || gpsDenied) startGps(); }, { capture:true, passive:true });
 $('#gpsbtn').onclick = () => { if (pos?.manual) { pos = gps ? {...gps} : null; $('#gpsbtn').textContent = gps?`📡 ±${Math.round(gps.acc)}m`:'📡 검색 중…'; drawMe(); update(); renderNow(); }
   else if (!watchId) startGps(); else if (pos) fitView([geoToPx(pos)]); };
 // 나침반: Android(갤럭시)는 권한 없이 즉시 ON. iOS는 사용자 터치가 있어야 권한 요청이 가능하므로
@@ -502,7 +495,7 @@ function setArrow(b) { const rel = heading!=null ? b-heading : b; $('#arrow').st
 // ---------- boot ----------
 function tick() { $('#clock').firstChild.nodeValue = nowState().hhmm; }
 buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched(); $('#svgwrap').classList.toggle('tools', tools);
-if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:la,lng:lg,acc:8,manual:true}; watchId=-1; gpsState(''); drawMe(); renderNow(); } else openGate();   // 개발용 ?pos=lat,lng
+if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:la,lng:lg,acc:8,manual:true}; watchId=-1; gpsState(''); drawMe(); renderNow(); } else boot();   // 개발용 ?pos=lat,lng
 if (q.get('tab')) showPanel(q.get('tab'));
 if (q.get('debug')) svg.classList.add('debug');   // ?debug=1 → 도보 그래프 표시
 setInterval(()=>{ tick(); renderNow(); if ($('#sched').classList.contains('on')) renderSched(); }, 30000);
