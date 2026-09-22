@@ -180,9 +180,9 @@ function renderNow() {
   const live = day.items.filter(i => toMin(i.s)<=n.min && n.min<toMin(i.e));
   const next = day.items.filter(i => toMin(i.s)>n.min).sort((a,b)=>toMin(a.s)-toMin(b.s));
   const ns = next.length ? toMin(next[0].s) : null;
-  live.forEach(i => html += card(i,'live',`진행 중 · ${untilTxt(toMin(i.e)-n.min)} 남음`));
-  next.filter(i=>toMin(i.s)===ns).forEach(i => html += card(i,'next',`다음 · ${untilTxt(toMin(i.s)-n.min)} 후 시작`));
-  next.filter(i=>toMin(i.s)!==ns).slice(0,3).forEach(i => html += card(i,'later',`${untilTxt(toMin(i.s)-n.min)} 후`));
+  const cards = [ ...live.map(i=>[i,'live',`진행 중 · ${untilTxt(toMin(i.e)-n.min)} 남음`]),
+    ...next.map(i=>[i, toMin(i.s)===ns?'next':'later', toMin(i.s)===ns?`다음 · ${untilTxt(toMin(i.s)-n.min)} 후 시작`:`${untilTxt(toMin(i.s)-n.min)} 후`]) ].slice(0,3);
+  cards.forEach(([i,k,u]) => html += card(i,k,u));
   if (!live.length && !next.length) html += `<div class="card"><div class="title">오늘 일정 종료 🌙</div></div>`;
   el.innerHTML = html;
 }
@@ -232,16 +232,27 @@ function dijkstra(src, dst) {
   const path=[]; for (let k=dst;k;k=prev[k]?.from) { path.unshift({k,opt:prev[k]?.opt}); if (k===src) break; }
   return { path, len:d[dst] };
 }
-// 점 p 에서 가장 가까운 간선 위의 점 (미터 좌표계에서 계산)
-function snapToPath(p) {
-  const [px,py] = geoNE(p); let best=null;
-  for (const [a,b] of E) {
-    const [ax,ay]=geoNE(N[a].geo), [bx,by]=geoNE(N[b].geo), dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy;
-    const t = L2 ? Math.max(0, Math.min(1, ((px-ax)*dx+(py-ay)*dy)/L2)) : 0;
-    const qx=ax+t*dx, qy=ay+t*dy, d=Math.hypot(px-qx, py-qy);
-    if (!best || d<best.d) best = { d, p:{ lat:ORIGIN.lat+qx/M_LAT, lng:ORIGIN.lng+qy/M_LNG } };
+// 점 p 에서 가장 가까운 간선 위의 점 (미터 좌표계). 우선순위:
+//  ① 안내 중인 경로 위 간선 (경로에서 SNAP 이내면 무조건 경로에 붙임 — 옆 통로로 새지 않게)
+//  ② 직전에 붙어 있던 간선 (다른 간선이 6m 이상 더 가까울 때만 갈아탐)
+//  ③ 전체 간선 중 최근접
+let lastEdge = null, lastPath = null;
+function segDist(p, a, b) {
+  const [px,py]=geoNE(p), [ax,ay]=geoNE(a), [bx,by]=geoNE(b), dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy;
+  const t = L2 ? Math.max(0, Math.min(1, ((px-ax)*dx+(py-ay)*dy)/L2)) : 0, qx=ax+t*dx, qy=ay+t*dy;
+  return { d:Math.hypot(px-qx,py-qy), p:{ lat:ORIGIN.lat+qx/M_LAT, lng:ORIGIN.lng+qy/M_LNG } };
+}
+function snapToPath(p, snapM) {
+  if (lastPath && lastPath.length>1) {   // ① 경로 우선
+    let best=null; for (let i=0;i<lastPath.length-1;i++) { const r=segDist(p, N[lastPath[i]].geo, N[lastPath[i+1]].geo); if (!best||r.d<best.d) best=r; }
+    if (best && best.d<=snapM) return { ...best, onRoute:true };
   }
-  return best;
+  let best=null, bestE=null;
+  for (let i=0;i<E.length;i++) { const r=segDist(p, N[E[i][0]].geo, N[E[i][1]].geo); if (!best||r.d<best.d) { best=r; bestE=i; } }
+  if (lastEdge!=null && bestE!==lastEdge) {   // ② 히스테리시스
+    const r=segDist(p, N[E[lastEdge][0]].geo, N[E[lastEdge][1]].geo); if (r.d<=snapM && r.d-best.d<6) { return r; }
+  }
+  lastEdge = bestE; return best;
 }
 function nearestNode(p) { let best=null, bd=Infinity; for (const k in N) { const dd=distM(p,N[k].geo); if (dd<bd) { bd=dd; best=k; } } return { k:best, d:bd }; }
 function routeTo(k) {
@@ -333,7 +344,7 @@ function startGps() {
     gps = raw;
     if (!pos?.manual) {
       // 2) 경로 스냅: 도보길에서 SNAP_M 이내면 도보길 위로 붙임 (건물 안 통로 포함)
-      const sn = snapToPath(raw), SNAP_M = raw.acc<=10 ? 12 : 35;
+      const SNAP_M = raw.acc<=10 ? 12 : 35, sn = snapToPath(raw, SNAP_M);
       pos = sn && sn.d <= SNAP_M ? { ...sn.p, acc:raw.acc, snapped:true } : { ...raw };
       $('#gpsbtn').textContent = `📡 ±${Math.round(raw.acc)}m${pos.snapped?' · 경로':''}`;
       drawMe(); update(); if ($('#now').classList.contains('on')) renderNow();
@@ -380,7 +391,7 @@ function update() {
   if (!target) return;
   const v = N[target]; $('#hud-name').innerHTML = v.name + fl(v.floor) + (v.est?' <small style="color:var(--acc)">위치 추정</small>':'');
   if (!pos) { $('#hud-sub').textContent='GPS 위치 찾는 중… (📍여기 로 직접 지정 가능)'; $('#dist').textContent='—'; $('#steps').textContent=''; routeEl.setAttribute('points',''); route2.setAttribute('points',''); return; }
-  const r = routeTo(target), straight = distM(pos, v.geo);
+  const r = routeTo(target), straight = distM(pos, v.geo); lastPath = r.path.map(s=>s.k);
   if (straight < 20) { routeEl.setAttribute('points',''); route2.setAttribute('points',''); $('#dist').textContent=`${Math.round(straight)}m`; $('#hud-sub').textContent=`도착 · ${v.note||''}`; $('#steps').innerHTML=`✅ 목적지 근처입니다. ${fl(v.floor)} 확인`; setArrow(bearing(pos,v.geo)); return; }
   const pts = [geoToPx(pos), ...r.path.map(s=>N[s.k].P)].map(p=>p.join(',')).join(' ');
   routeEl.setAttribute('points',pts); route2.setAttribute('points',pts);
