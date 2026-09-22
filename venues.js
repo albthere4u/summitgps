@@ -1,70 +1,65 @@
 // ================================================================
-// 안내도 기반 데이터. 모든 px 는 assets/resort-map-annot.png 위 픽셀 좌표를
-// "폭 2000 기준"으로 적은 값 (실제 이미지 2158px → PX_SCALE 로 환산).
+// 안내도 기반 데이터. px 는 assets/resort-map-v2.png (1672x941) 위 픽셀 좌표.
+// 배경 이미지에 라벨·핀이 이미 그려져 있으므로 앱은 작은 링 마커만 겹쳐 그린다.
 // ================================================================
-window.MAP_IMG = { src:'assets/resort-map-annot.png', w:2158, h:838 };
-window.PX_SCALE = 2158/2000;
+window.MAP_IMG = { src:'assets/resort-map-v2.png', w:1672, h:941 };
+window.PX_SCALE = 1;
 
-// ----- GPS(위경도) ↔ 안내도 픽셀 보정점 -----
-// 앱은 이 쌍들로 최소제곱 아핀변환을 구해 GPS 점을 안내도 위에 찍는다.
-// 앱의 "보정" 모드로 쌍을 추가하면 localStorage 에 쌓이고, 여기로 옮겨 적으면 영구 반영.
+// ----- GPS(위경도) ↔ 안내도 픽셀 보정점 (최소제곱 아핀변환) -----
+// 앱 "보정" 모드로 추가한 쌍은 localStorage 에 쌓임 → 일정 탭 하단에서 복사해 여기로 옮기면 영구 반영.
 window.CALIB = [
-  { px:[655,668],  lat:20.9125539, lng:-156.6912768, name:'Lahaina 엘리베이터' },
-  { px:[1745,555], lat:20.9135683, lng:-156.6929377, name:'Napili 엘리베이터' },
-  { px:[412,627],  lat:20.9119657, lng:-156.6912590, name:'Monarchy(33)' },
-  { px:[480,440],  lat:20.9119100, lng:-156.6913120, name:'Media Lounge(18)' },
+  { px:[528,668],  lat:20.9125539, lng:-156.6912768, name:'Lahaina 엘리베이터' },
+  { px:[1475,553], lat:20.9135683, lng:-156.6929377, name:'Napili 엘리베이터' },
+  { px:[290,585],  lat:20.9119657, lng:-156.6912590, name:'Monarchy' },
+  { px:[350,462],  lat:20.9119100, lng:-156.6913120, name:'Media Lounge' },
 ];
 
-// ----- 지점(노드). venue:true 만 목적지 선택 가능. floor: L | 1 | out -----
-// px 는 안내도 상 아이콘 위치(실측 GPS 와 별개). est:true 는 안내도 상 위치 추정.
+// ----- 지점(노드). venue:true 만 목적지. floor: L | 1 | out -----
 window.NODES = {
-  // 목적지
-  sunsetTerrace:{ name:'Sunset Terrace',            px:[450,405],  floor:'1', venue:true, note:'입구는 18번 좌측 상단 · 로비에서 계단 ↓' },
-  mediaLounge:  { name:'Media Lounge',              px:[480,440],  floor:'1', venue:true, note:'안내도 18번 · 로비에서 계단 ↓' },
-  monarchy14:   { name:'Monarchy Ballroom 1-4',     px:[412,627],  floor:'1', venue:true, note:'안내도 33번 · 로비에서 계단 ↓ · 키노트' },
-  monarchy57:   { name:'Monarchy 5-7',              px:[440,660],  floor:'1', venue:true, note:'33번 옆 · 데모' },
-  lahElev:      { name:'Lahaina Tower 엘리베이터',   px:[655,665],  floor:'L', venue:true, note:'미팅룸 351·364(3층) / 479(4층) / 579(5층)' },
-  lahaina12:    { name:'Lahaina Room 1 & 2',        px:[620,540],  floor:'L', venue:true, est:true, note:'Lahaina Tower 로비층' },
-  lahaina34:    { name:'Lahaina Room 3 & 4',        px:[600,585],  floor:'L', venue:true, est:true, note:'Lahaina Tower 로비층' },
-  halonaKai:    { name:'Halona Kai Lawn',           px:[1235,510], floor:'L', venue:true, note:'입구는 44번 왼쪽 (Atrium Tower)' },
-  atriumElev:   { name:'Atrium Tower 엘리베이터',    px:[1230,632], floor:'1', venue:true, note:'28번 오른쪽 ↑↓' },
-  recCenter:    { name:'레크리에이션 센터',           px:[1400,400], floor:'1', venue:true, est:true, note:'수영장 앞' },
-  jacuzzi:      { name:'자쿠지',                    px:[1784,354], floor:'1', venue:true, est:true, note:'바다쪽' },
-  napiliElev:   { name:'Napili Tower 엘리베이터',    px:[1745,555], floor:'1', venue:true, note:'Napili Tower 안 TC 아래 ↑↓' },
-  smoking:      { name:'흡연 구역',                  px:[1885,690], floor:'out', venue:true, note:'실외 · 도로 옆' },
-  // 경유점 (빨간 도보길 위)
-  bW:{px:[60,300]}, b1:{px:[200,240]}, b2:{px:[450,235]}, b3:{px:[700,215]}, b4:{px:[1000,190]}, b5:{px:[1090,170]}, b6:{px:[1500,130]}, b7:{px:[1720,150]}, b8:{px:[1750,185]},
-  sunsetLink:{px:[440,300]}, groupEnt:{px:[240,470]}, lobbyW:{px:[400,390]},
-  stairs:{px:[555,470], name:'로비 계단', floor:'L'}, lobbyS:{px:[440,520]},
-  lahLink:{px:[700,600]},
-  s1:{px:[700,550]}, s2:{px:[900,560]}, s3:{px:[1150,540]}, s4:{px:[1330,530]}, s5:{px:[1470,525]}, s6:{px:[1600,610]}, s7:{px:[1790,690]},
-  atriumN:{px:[1275,380]}, pool1:{px:[1060,280]}, pool2:{px:[1130,260]}, pool3:{px:[1200,320]},
-  napPool:{px:[1680,360]}, nap2:{px:[1700,440]}, nap3:{px:[1740,470]},
+  // 목적지 (배경 이미지의 핀 위치)
+  sunsetTerrace:{ name:'Sunset Terrace',            px:[195,378],  floor:'1', venue:true, note:'로비에서 계단 ↓ · 식사' },
+  mediaLounge:  { name:'Media Lounge',              px:[350,462],  floor:'1', venue:true, note:'로비에서 계단 ↓' },
+  lahaina12:    { name:'Lahaina Room 1 & 2',        px:[430,497],  floor:'L', venue:true, note:'Lahaina Tower 로비층' },
+  lahaina34:    { name:'Lahaina Room 3 & 4',        px:[445,543],  floor:'L', venue:true, note:'Lahaina Tower 로비층' },
+  monarchy14:   { name:'Monarchy Ballroom 1-4',     px:[290,585],  floor:'1', venue:true, note:'로비에서 계단 ↓ · 키노트' },
+  monarchy57:   { name:'Monarchy 5-7',              px:[350,663],  floor:'1', venue:true, note:'Monarchy 1-4 옆 · 데모' },
+  lahElev:      { name:'Lahaina Tower 엘리베이터',   px:[528,668],  floor:'L', venue:true, note:'미팅룸 351·364(3층) / 479(4층) / 579(5층)' },
+  halonaKai:    { name:'Halona Kai Lawn',           px:[1030,540], floor:'L', venue:true, note:'Atrium Tower 옆 잔디 입구' },
+  atriumElev:   { name:'Atrium Tower 엘리베이터',    px:[962,650],  floor:'1', venue:true },
+  recCenter:    { name:'레크리에이션 센터',           px:[1160,352], floor:'1', venue:true, note:'수영장 앞' },
+  jacuzzi:      { name:'자쿠지',                    px:[1410,385], floor:'1', venue:true, note:'Napili Pool 옆' },
+  napiliElev:   { name:'Napili Tower 엘리베이터',    px:[1475,553], floor:'1', venue:true },
+  smoking:      { name:'흡연 구역',                  px:[1530,768], floor:'out', venue:true, note:'실외 · 도로 옆' },
+  // 경유점 (배경의 빨간 도보길 위)
+  bW:{px:[40,385]}, b1:{px:[160,345]}, b2:{px:[330,310]}, b3:{px:[430,280]}, b4:{px:[700,250]}, b5:{px:[890,235]}, b6:{px:[1000,200]}, b7:{px:[1210,190]}, b8:{px:[1420,215]}, b9:{px:[1510,255]},
+  n1:{px:[1495,335]}, n2:{px:[1470,400]}, n3:{px:[1445,470]}, n4:{px:[1440,540]},
+  p1:{px:[870,300]}, p2:{px:[905,370]}, p3:{px:[1000,400]}, p4:{px:[1060,440]}, p5:{px:[1050,490]},
+  sl1:{px:[360,350]}, sl2:{px:[372,405]}, lobbyN:{px:[355,440]},
+  stairs:{px:[372,470], name:'로비 계단', floor:'L'}, lobbyS:{px:[300,500]},
+  gW:{px:[170,455]}, g1:{px:[200,520]}, g2:{px:[240,535]},
+  c0:{px:[395,525]}, c1:{px:[430,600]}, c2:{px:[600,590]}, c3:{px:[700,600]}, c4:{px:[820,625]}, c5:{px:[900,610]}, c6:{px:[985,590]}, c7:{px:[1100,605]}, c8:{px:[1250,605]}, c9:{px:[1400,640]}, c10:{px:[1500,700]},
+  lahLink:{px:[520,640]},
 };
 
-// ----- 도보 이동로(간선) — 안내도의 빨간 선. stairs:true 는 층 이동(+40m, 안내문구) -----
+// ----- 도보 이동로(간선). stairs:true 는 층 이동(+40m, 안내문구) -----
 window.EDGES = [
-  // 해변 산책로
-  ['bW','b1'],['b1','b2'],['b2','b3'],['b3','b4'],['b4','b5'],['b5','b6'],['b6','b7'],['b7','b8'],
-  // Sunset Terrace / 로비 남쪽
-  ['b2','sunsetLink'],['sunsetLink','lobbyW'],
-  ['lobbyW','sunsetTerrace',{stairs:true,msg:'계단으로 1층 내려가기'}],
-  ['groupEnt','bW'],['groupEnt','lobbyS'],['lobbyS','lobbyW'],
+  // 해변 산책로 → Napili Tower
+  ['bW','b1'],['b1','b2'],['b2','b3'],['b3','b4'],['b4','b5'],['b5','b6'],['b6','b7'],['b7','b8'],['b8','b9'],
+  ['b9','n1'],['n1','n2'],['n2','n3'],['n3','n4'],['n4','napiliElev'],
+  // 수영장 루프
+  ['b5','p1'],['p1','p2'],['p2','p3'],['p3','p4'],['p4','p5'],['p5','halonaKai'],
+  ['p3','recCenter'],['recCenter','b7'],['jacuzzi','n2'],['jacuzzi','b8'],
+  // Lahaina Tower 로비 / 1층
+  ['b2','sl1'],['sl1','sl2'],['sl2','lobbyN'],['lobbyN','stairs'],
   ['stairs','mediaLounge',{stairs:true,msg:'계단으로 1층 내려가기'}],
-  ['stairs','lobbyS'],
-  ['lobbyS','monarchy14',{stairs:true,msg:'계단으로 1층 내려가기'}],
-  ['monarchy14','monarchy57'],['mediaLounge','monarchy14'],
-  // Lahaina Tower 로비층
-  ['stairs','lahaina12'],['lahaina12','lahaina34'],['lahaina34','lahLink'],['lahLink','lahElev'],
-  ['stairs','s1'],['lahaina12','s1'],['lahLink','s1'],
-  // 중앙 통로
-  ['s1','s2'],['s2','s3'],['s3','s4'],['s4','s5'],['s5','s6'],['s6','s7'],['s7','smoking'],
-  ['s3','atriumElev'],['s4','atriumElev'],['s3','halonaKai'],['halonaKai','atriumN'],
-  // 수영장 쪽
-  ['atriumN','pool3'],['pool3','pool2'],['pool2','b5'],['pool2','pool1'],['pool1','b4'],
-  ['pool3','recCenter'],['recCenter','napPool'],['napPool','jacuzzi'],
-  ['b8','napPool'],['napPool','nap2'],['nap2','nap3'],['nap3','napiliElev'],
-  ['s5','napiliElev'],['s5','nap3'],
+  ['stairs','sunsetTerrace',{stairs:true,msg:'계단으로 1층 내려가기'}],
+  ['stairs','lobbyS'],['lobbyS','monarchy14',{stairs:true,msg:'계단으로 1층 내려가기'}],
+  ['mediaLounge','sunsetTerrace'],['mediaLounge','monarchy14'],['monarchy14','monarchy57'],
+  ['gW','bW'],['gW','g1'],['g1','g2'],['g2','lobbyS'],
+  ['stairs','c0'],['c0','lahaina12'],['lahaina12','lahaina34'],['lahaina34','c1'],['c1','lahLink'],['lahLink','lahElev'],
+  // 중앙 통로 → Atrium → Napili → 흡연구역
+  ['c1','c2'],['c2','c3'],['c3','c4'],['c4','c5'],['c5','c6'],['c6','c7'],['c7','c8'],['c8','c9'],['c9','c10'],['c10','smoking'],
+  ['c6','halonaKai'],['c6','atriumElev'],['c7','atriumElev'],['c9','napiliElev'],['c9','n4'],
 ];
 
 // ===== 일정 (HST). v: NODES 키. null 이면 리조트 밖(안내 없음) =====

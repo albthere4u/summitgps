@@ -1,6 +1,6 @@
 // 앱 셸: network-first(업데이트 즉시 반영), 실패 시 캐시(오프라인)
-const SHELL = 'shell-v3';
-const ASSETS = ['./', './index.html', './venues.js', './manifest.json', './assets/icon.png', './assets/resort-map.png', './assets/resort-map-annot.png'];
+const SHELL = 'shell-v4';
+const ASSETS = ['./', './index.html', './venues.js', './manifest.json', './assets/icon.png', './assets/resort-map-v2.png'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k=>k!==SHELL).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });

@@ -56,11 +56,11 @@
   #steps { margin-top:8px; font-size:12px; color:var(--dim); line-height:1.5; }
   #steps b { color:var(--fg); }
   /* svg */
-  .edge { stroke:#ff3b30; stroke-width:5; stroke-opacity:.35; fill:none; stroke-linecap:round; }
-  .route { stroke:#ffb703; stroke-width:16; stroke-linecap:round; stroke-linejoin:round; fill:none; filter:drop-shadow(0 0 4px #0008); }
-  .route2 { stroke:#0b1a3a; stroke-width:22; stroke-linecap:round; stroke-linejoin:round; fill:none; opacity:.5; }
-  .node { fill:#ffb703; stroke:#1a1200; stroke-width:3; } .node.tgt { fill:#ff3b30; stroke:#fff; stroke-width:4; }
-  .lbl { fill:#0b1a3a; font-size:26px; font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:6px; stroke-linejoin:round; pointer-events:none; }
+  .edge { stroke:#00c2ff; stroke-width:3; stroke-opacity:.6; fill:none; stroke-linecap:round; display:none; } .debug .edge { display:block; }
+  .route { stroke:#ffb703; stroke-width:9; stroke-dasharray:16 12; stroke-linecap:round; stroke-linejoin:round; fill:none; }
+  .route2 { stroke:#0b1a3a; stroke-width:15; stroke-dasharray:16 12; stroke-linecap:round; stroke-linejoin:round; fill:none; opacity:.55; }
+  .node { fill:none; stroke:#ffb703; stroke-width:4; opacity:.85; } .node.tgt { fill:#ff3b3055; stroke:#ff3b30; stroke-width:6; opacity:1; animation:pulse 1.2s infinite; } @keyframes pulse { 50% { stroke-opacity:.3; } }
+  .lbl { display:none; fill:#0b1a3a; font-size:26px; font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:6px; stroke-linejoin:round; pointer-events:none; }
   .lbl.tgt { fill:#b00020; font-size:30px; }
   .me { fill:#2f80ff; stroke:#fff; stroke-width:4; } .meacc { fill:#2f80ff22; stroke:#2f80ff; stroke-width:2; }
   .me.manual { fill:#8e44ad; }
@@ -253,7 +253,7 @@ for (const [a,b] of E) gEdges.appendChild(el('line',{class:'edge',x1:N[a].P[0],y
 const OFF = { mediaLounge:[18,10], monarchy14:[-150,44], monarchy57:[20,38], sunsetTerrace:[-60,-18], lahElev:[-20,44], lahaina12:[18,-6], lahaina34:[-190,40], halonaKai:[-90,-18], atriumElev:[-110,44], recCenter:[16,-12], jacuzzi:[-40,-14], napiliElev:[-120,-16], smoking:[-120,44] };
 const nodeEls = {};
 for (const k in N) { if (!N[k].venue) continue; const o=OFF[k]||[18,10], g=el('g',{}); g.style.cursor='pointer';
-  g.appendChild(el('circle',{class:'node',cx:N[k].P[0],cy:N[k].P[1],r:13}));
+  g.appendChild(el('circle',{class:'node',cx:N[k].P[0],cy:N[k].P[1],r:22}));
   g.appendChild(el('text',{class:'lbl',x:N[k].P[0]+o[0],y:N[k].P[1]+o[1]}, N[k].name));
   gPins.appendChild(g); nodeEls[k]=g; }
 const meAcc = el('circle',{class:'meacc',r:0,cx:-9999,cy:-9999}), meG = el('g',{visibility:'hidden'});
@@ -371,6 +371,7 @@ function tick() { $('#clock').firstChild.nodeValue = nowState().hhmm; }
 buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched();
 if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:la,lng:lg,acc:8,manual:true}; watchId=-1; drawMe(); renderNow(); } else startGps();   // 개발용 ?pos=lat,lng
 if (q.get('tab')) showPanel(q.get('tab'));
+if (q.get('debug')) svg.classList.add('debug');   // ?debug=1 → 도보 그래프 표시
 setInterval(()=>{ tick(); renderNow(); if ($('#sched').classList.contains('on')) renderSched(); }, 30000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
