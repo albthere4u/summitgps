@@ -232,6 +232,17 @@ function dijkstra(src, dst) {
   const path=[]; for (let k=dst;k;k=prev[k]?.from) { path.unshift({k,opt:prev[k]?.opt}); if (k===src) break; }
   return { path, len:d[dst] };
 }
+// 점 p 에서 가장 가까운 간선 위의 점 (미터 좌표계에서 계산)
+function snapToPath(p) {
+  const [px,py] = geoNE(p); let best=null;
+  for (const [a,b] of E) {
+    const [ax,ay]=geoNE(N[a].geo), [bx,by]=geoNE(N[b].geo), dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy;
+    const t = L2 ? Math.max(0, Math.min(1, ((px-ax)*dx+(py-ay)*dy)/L2)) : 0;
+    const qx=ax+t*dx, qy=ay+t*dy, d=Math.hypot(px-qx, py-qy);
+    if (!best || d<best.d) best = { d, p:{ lat:ORIGIN.lat+qx/M_LAT, lng:ORIGIN.lng+qy/M_LNG } };
+  }
+  return best;
+}
 function nearestNode(p) { let best=null, bd=Infinity; for (const k in N) { const dd=distM(p,N[k].geo); if (dd<bd) { bd=dd; best=k; } } return { k:best, d:bd }; }
 function routeTo(k) {
   const near = nearestNode(pos), r = dijkstra(near.k, k), straight = distM(pos, N[k].geo);
@@ -308,9 +319,18 @@ function startGps() {
   if (!navigator.geolocation) { $('#gpsbtn').textContent='GPS 미지원'; return; }
   $('#gpsbtn').textContent='📡 검색 중…';
   watchId = navigator.geolocation.watchPosition(p => {
-    gps = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy };
+    const raw = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy };
     if (p.coords.heading!=null && p.coords.speed>0.5) heading=p.coords.heading;
-    if (!pos?.manual) { pos = { ...gps }; $('#gpsbtn').textContent=`📡 ±${Math.round(gps.acc)}m`; drawMe(); update(); if ($('#now').classList.contains('on')) renderNow(); }
+    // 1) 저역 필터: 정확도가 나쁠수록 이전 위치를 더 신뢰 (실내에서 튀는 것 완화)
+    if (gps && !gps.jumped) { const a = raw.acc<=10 ? 0.8 : raw.acc<=25 ? 0.5 : 0.25; raw.lat = gps.lat+(raw.lat-gps.lat)*a; raw.lng = gps.lng+(raw.lng-gps.lng)*a; }
+    gps = raw;
+    if (!pos?.manual) {
+      // 2) 경로 스냅: 도보길에서 SNAP_M 이내면 도보길 위로 붙임 (건물 안 통로 포함)
+      const sn = snapToPath(raw), SNAP_M = raw.acc<=10 ? 12 : 35;
+      pos = sn && sn.d <= SNAP_M ? { ...sn.p, acc:raw.acc, snapped:true } : { ...raw };
+      $('#gpsbtn').textContent = `📡 ±${Math.round(raw.acc)}m${pos.snapped?' · 경로':''}`;
+      drawMe(); update(); if ($('#now').classList.contains('on')) renderNow();
+    }
   }, e => { $('#gpsbtn').textContent='📡 '+(e.code===1?'권한 거부':'오류'); }, { enableHighAccuracy:true, maximumAge:2000, timeout:15000 });
 }
 $('#gpsbtn').onclick = () => { if (pos?.manual) { pos = gps ? {...gps} : null; $('#gpsbtn').textContent = gps?`📡 ±${Math.round(gps.acc)}m`:'📡 검색 중…'; drawMe(); update(); renderNow(); }
@@ -337,7 +357,7 @@ function drawMe() {
   const P = geoToPx(pos), inside = P[0]>-100&&P[0]<IMG.w+100&&P[1]>-100&&P[1]<IMG.h+100;
   const cx=Math.max(-80,Math.min(IMG.w+80,P[0])), cy=Math.max(-80,Math.min(IMG.h+80,P[1]));
   meG.setAttribute('visibility','visible'); meDot.classList.toggle('manual', !!pos.manual); meArr.classList.toggle('manual', !!pos.manual);
-  meAcc.setAttribute('cx',cx); meAcc.setAttribute('cy',cy); meAcc.setAttribute('r', pos.manual?0:Math.min(pos.acc,80)*AF.scale);
+  meAcc.setAttribute('cx',cx); meAcc.setAttribute('cy',cy); meAcc.setAttribute('r', pos.manual?0:(pos.snapped?6:Math.min(pos.acc,80))*AF.scale);
   if (heading!=null) { meArr.setAttribute('visibility','visible'); meDot.setAttribute('r',10); meG.setAttribute('transform',`translate(${cx},${cy}) rotate(${screenAngle(heading)+90})`); }
   else { meArr.setAttribute('visibility','hidden'); meDot.setAttribute('r',14); meG.setAttribute('transform',`translate(${cx},${cy})`); }
   if (!inside && !pos.manual) $('#gpsbtn').textContent = `📡 ±${Math.round(pos.acc)}m · 범위 밖`;
