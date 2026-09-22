@@ -59,7 +59,7 @@
   .edge { stroke:#00c2ff; stroke-width:3; stroke-opacity:.6; fill:none; stroke-linecap:round; display:none; } .debug .edge { display:block; }
   .route { stroke:#ffb703; stroke-width:9; stroke-dasharray:16 12; stroke-linecap:round; stroke-linejoin:round; fill:none; }
   .route2 { stroke:#0b1a3a; stroke-width:15; stroke-dasharray:16 12; stroke-linecap:round; stroke-linejoin:round; fill:none; opacity:.55; }
-  .node { fill:none; stroke:#ffb703; stroke-width:4; opacity:.85; } .node.tgt { fill:#ff3b3055; stroke:#ff3b30; stroke-width:6; opacity:1; animation:pulse 1.2s infinite; } @keyframes pulse { 50% { stroke-opacity:.3; } }
+  .node { fill:none; stroke:#ffb703; stroke-width:4; opacity:.85; } .node.tgt { fill:#ff3b3066; stroke:#ff1a1a; stroke-width:9; opacity:1; r:34px; transform-box:fill-box; transform-origin:center; animation:pulse 1s infinite; } @keyframes pulse { 0%{transform:scale(.85);stroke-opacity:1} 60%{transform:scale(1.25);stroke-opacity:.35} 100%{transform:scale(.85);stroke-opacity:1} }
   .lbl { display:none; fill:#0b1a3a; font-size:26px; font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:6px; stroke-linejoin:round; pointer-events:none; }
   .lbl.tgt { fill:#b00020; font-size:30px; }
   .me { fill:#2f80ff; stroke:#fff; stroke-width:4; } .meacc { fill:#2f80ff22; stroke:#2f80ff; stroke-width:2; }
@@ -103,7 +103,7 @@
     <section id="sched" class="panel"></section>
   </main>
   <nav>
-    <button data-p="now" class="on"><i>⏱</i>지금</button>
+    <button data-p="now" class="on"><i>⏱</i>일정별 안내</button>
     <button data-p="guide"><i>🗺</i>지도</button>
     <button data-p="sched"><i>📋</i>전체 위치 보기</button>
   </nav>
@@ -175,8 +175,8 @@ function autoTarget() {
 let selectedDay = null;
 function renderNow() {
   const n = nowState(), day = S.find(d=>d.date===n.date), el = $('#now');
-  let html = `<div class="sub" style="margin-bottom:8px">${n.date} · ${day?day.day:'행사 기간 외'}</div>`;
-  if (!day) { el.innerHTML = html + `<div class="card"><div class="title">행사 기간이 아닙니다</div><div class="sub">9/22–9/24 HST</div></div>`; return; }
+  let html = '';
+  if (!day) { el.innerHTML = `<div class="card"><div class="title">행사 기간이 아닙니다</div><div class="sub">9/22–9/24 HST</div></div>` + schedHtml(); return; }
   const live = day.items.filter(i => toMin(i.s)<=n.min && n.min<toMin(i.e));
   const next = day.items.filter(i => toMin(i.s)>n.min).sort((a,b)=>toMin(a.s)-toMin(b.s));
   const ns = next.length ? toMin(next[0].s) : null;
@@ -184,7 +184,7 @@ function renderNow() {
     ...next.map(i=>[i, toMin(i.s)===ns?'next':'later', toMin(i.s)===ns?`다음 · ${untilTxt(toMin(i.s)-n.min)} 후 시작`:`${untilTxt(toMin(i.s)-n.min)} 후`]) ].slice(0,3);
   cards.forEach(([i,k,u]) => html += card(i,k,u));
   if (!live.length && !next.length) html += `<div class="card"><div class="title">오늘 일정 종료 🌙</div></div>`;
-  el.innerHTML = html;
+  el.innerHTML = html + schedHtml();
 }
 function card(i, kind, until) {
   const v = i.v ? N[i.v] : null, tag = kind==='live'?'진행 중':kind==='next'?'다음 일정':'이후';
@@ -203,9 +203,9 @@ function distLine(k) {
 }
 
 // ---------- schedule ----------
-function renderSched() {
+function schedHtml() {
   const n = nowState(), di = selectedDay ?? Math.max(0, S.findIndex(d=>d.date===n.date)), day = S[di];
-  let html = `<div class="days">${S.map((d,k)=>`<button class="${k===di?'on':''}" onclick="selectedDay=${k};renderSched()">${d.day}</button>`).join('')}</div>`;
+  let html = `<h3 style="margin:18px 0 8px;font-size:14px;color:var(--dim)">전체 일정</h3><div class="days">${S.map((d,k)=>`<button class="${k===di?'on':''}" onclick="selectedDay=${k};renderNow()">${d.day}</button>`).join('')}</div>`;
   day.items.forEach(i => {
     const today = day.date===n.date, sm=toMin(i.s), em=toMin(i.e), cls = today ? (n.min>=em?'past':(n.min>=sm?'live':'')) : '';
     const v = i.v ? N[i.v] : null;
@@ -213,6 +213,21 @@ function renderSched() {
       <div class="sub">📍 ${v?v.name:i.place}${i.room?` · ${i.room}`:''}${v?fl(v.floor):''}</div>
       ${v?`<button class="go" style="padding:5px 10px;font-size:12px" onclick="goTo('${i.v}')">여기로 가기 →</button>`:''}</div></div>`;
   });
+  return html;
+}
+// 4) 전체 위치 보기: 장소별 리스트 + 여기로 가기
+function renderSched() {
+  const n = nowState();
+  let html = '';
+  for (const k in N) {
+    const v = N[k]; if (!v.venue) continue;
+    const uses = []; S.forEach(d => d.items.forEach(i => { if (i.v===k) uses.push(`${d.day.split(' ')[0]} ${i.s} ${i.t}${i.room?` (${i.room})`:''}`); }));
+    const d = pos ? routeTo(k) : null;
+    html += `<div class="card"><div class="row"><div class="title" style="margin:0">${v.name}</div>${fl(v.floor)}<div class="until">${d?`${Math.round(d.total)}m`:''}</div></div>
+      ${v.note?`<div class="sub">${v.note}</div>`:''}
+      ${uses.length?`<div class="sub" style="margin-top:4px">${uses.map(u=>'· '+u).join('<br>')}</div>`:''}
+      <button class="go" onclick="goTo('${k}')">여기로 가기 →</button></div>`;
+  }
   html += `<details><summary>⚙ 보정 데이터 (${AF.n}점 · 추가 ${AF.extra.length}점)</summary><pre id="calpre">${JSON.stringify(AF.extra)}</pre>
     <button onclick="navigator.clipboard?.writeText($('#calpre').textContent)">복사</button><button onclick="localStorage.removeItem('calib');fitAffine();renderSched();redraw()">추가점 초기화</button></details>`;
   $('#sched').innerHTML = html;
@@ -327,7 +342,7 @@ function onTap(e) {
   else if (mode==='cal') {
     if (!gps) { $('#modehint').textContent='GPS 위치가 아직 없습니다. 잠시 후 다시 탭하세요'; return; }
     const extra = AF.extra.concat([{ P, lat:gps.lat, lng:gps.lng, acc:Math.round(gps.acc) }]); localStorage.setItem('calib', JSON.stringify(extra));
-    fitAffine(); setMode('none'); redraw(); renderSched(); $('#modehint').style.display='block'; $('#modehint').textContent=`보정점 추가됨 (총 ${AF.n}점). 일정 탭 하단에서 복사 가능`; setTimeout(()=>{ if (mode==='none') $('#modehint').style.display='none'; }, 3000);
+    fitAffine(); setMode('none'); redraw(); renderSched(); $('#modehint').style.display='block'; $('#modehint').textContent=`보정점 추가됨 (총 ${AF.n}점). 전체 위치 보기 하단에서 복사 가능`; setTimeout(()=>{ if (mode==='none') $('#modehint').style.display='none'; }, 3000);
   }
 }
 
@@ -347,7 +362,7 @@ function startGps() {
       const SNAP_M = raw.acc<=10 ? 12 : 35, sn = snapToPath(raw, SNAP_M);
       pos = sn && sn.d <= SNAP_M ? { ...sn.p, acc:raw.acc, snapped:true } : { ...raw };
       $('#gpsbtn').textContent = `📡 ±${Math.round(raw.acc)}m${pos.snapped?' · 경로':''}`;
-      drawMe(); update(); if ($('#now').classList.contains('on')) renderNow();
+      drawMe(); update(); if ($('#now').classList.contains('on')) renderNow(); if ($('#sched').classList.contains('on')) renderSched();
     }
   }, e => { $('#gpsbtn').textContent='📡 '+(e.code===1?'권한 거부':'오류'); }, { enableHighAccuracy:true, maximumAge:2000, timeout:15000 });
 }
