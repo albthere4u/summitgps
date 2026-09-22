@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b1a3a">
@@ -36,13 +36,16 @@
   .go.off { background:var(--line); color:var(--dim); }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .until { margin-left:auto; color:var(--dim); font-size:12px; }
-  /* guide map */
+  /* guide */
   #guide { display:none; flex-direction:column; height:100%; }
   #guide.on { display:flex; }
-  #svgwrap { flex:1; min-height:0; position:relative; background:#0e1f47; }
+  #svgwrap { flex:1; min-height:0; position:relative; background:#dfe9f3; overflow:hidden; }
   #svgwrap svg { width:100%; height:100%; display:block; touch-action:none; }
-  #gpsbtn, #compassbtn { position:absolute; top:8px; z-index:5; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:7px 10px; font-size:12px; }
-  #gpsbtn { right:8px; } #compassbtn { left:8px; }
+  .tb { position:absolute; top:8px; z-index:5; display:flex; gap:6px; }
+  .tb.l { left:8px; } .tb.r { right:8px; }
+  .tb button { background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:7px 10px; font-size:12px; }
+  .tb button.on { background:var(--acc); color:#1a1200; border-color:var(--acc); }
+  #modehint { position:absolute; left:8px; right:8px; bottom:8px; z-index:5; background:rgba(11,26,58,.92); color:#ffd58a; border-radius:8px; padding:6px 10px; font-size:12px; display:none; }
   #hud { flex:none; background:var(--card); border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)/2); }
   #hud .top { display:flex; align-items:center; gap:12px; }
   #arrow { width:48px; height:48px; flex:none; display:grid; place-items:center; border-radius:50%; background:var(--bg); font-size:30px; transition:transform .2s; }
@@ -52,20 +55,17 @@
   #dist { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
   #steps { margin-top:8px; font-size:12px; color:var(--dim); line-height:1.5; }
   #steps b { color:var(--fg); }
-  /* svg styles */
-  .sea { fill:#1a4f8a; } .sea-t { fill:#8fc2ff; font-size:7px; }
-  .bldg { fill:#2a3f75; stroke:#4a63a8; stroke-width:1; rx:3; } .bldg1 { fill:#3b2a5c; stroke:#7a56b0; stroke-width:1; rx:3; }
-  .pool { fill:#2b6fb0; stroke:#6fb0ff; stroke-width:1; rx:12; } .lawn { fill:#2c5a35; stroke:#5c9a55; stroke-width:1; rx:6; }
-  .blk-t { fill:#c9d4f5; font-size:6px; font-weight:600; }
-  .edge { stroke:#6b7fb3; stroke-width:1.2; stroke-dasharray:2 2; fill:none; }
-  .route { stroke:var(--acc); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; fill:none; }
-  .node { fill:#ffb703; stroke:#1a1200; stroke-width:.8; } .node.tgt { fill:var(--bad); stroke:#fff; stroke-width:1.2; }
-  .node.via { fill:#9fb0d8; }
-  .lbl { fill:#eef2ff; font-size:5.5px; paint-order:stroke; stroke:#0b1a3a; stroke-width:1.5px; stroke-linejoin:round; }
-  .lbl.tgt { font-size:6.5px; font-weight:700; fill:#ffd6d6; }
-  .me { fill:#2f80ff; stroke:#fff; stroke-width:1.5; } .meacc { fill:#2f80ff22; stroke:#2f80ff; stroke-width:.5; }
-  .meh { fill:#2f80ff; }
-  .rose { fill:#9fb0d8; font-size:6px; }
+  /* svg */
+  .edge { stroke:#ff3b30; stroke-width:5; stroke-opacity:.35; fill:none; stroke-linecap:round; }
+  .route { stroke:#ffb703; stroke-width:16; stroke-linecap:round; stroke-linejoin:round; fill:none; filter:drop-shadow(0 0 4px #0008); }
+  .route2 { stroke:#0b1a3a; stroke-width:22; stroke-linecap:round; stroke-linejoin:round; fill:none; opacity:.5; }
+  .node { fill:#ffb703; stroke:#1a1200; stroke-width:3; } .node.tgt { fill:#ff3b30; stroke:#fff; stroke-width:4; }
+  .lbl { fill:#0b1a3a; font-size:26px; font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:6px; stroke-linejoin:round; pointer-events:none; }
+  .lbl.tgt { fill:#b00020; font-size:30px; }
+  .me { fill:#2f80ff; stroke:#fff; stroke-width:4; } .meacc { fill:#2f80ff22; stroke:#2f80ff; stroke-width:2; }
+  .me.manual { fill:#8e44ad; }
+  .cal { fill:none; stroke:#3ddc84; stroke-width:3; }
+  .cal-t { fill:#0b5a2a; font-size:20px; font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:4px; }
   /* schedule */
   #sched { padding:12px 14px; }
   .days { display:flex; gap:6px; margin-bottom:10px; }
@@ -79,7 +79,8 @@
   nav button { flex:1; background:none; border:0; color:var(--dim); padding:10px 0 8px; font-size:12px; }
   nav button.on { color:var(--acc); }
   nav button i { display:block; font-style:normal; font-size:20px; }
-  details { margin:10px 14px; color:var(--dim); font-size:12px; } details img { width:100%; margin-top:6px; border-radius:8px; }
+  details { margin:10px 0; color:var(--dim); font-size:12px; } details pre { white-space:pre-wrap; word-break:break-all; background:var(--card); padding:8px; border-radius:8px; font-size:11px; }
+  details button { background:var(--line); color:var(--fg); border:0; border-radius:6px; padding:6px 10px; font-size:12px; margin:4px 4px 0 0; }
 </style>
 </head>
 <body>
@@ -89,9 +90,10 @@
     <section id="now" class="panel on"></section>
     <section id="guide" class="panel">
       <div id="svgwrap">
-        <button id="compassbtn">🧭 나침반</button>
-        <button id="gpsbtn">📡 GPS</button>
-        <svg id="svg" viewBox="-25 -35 300 345" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="tb l"><button id="compassbtn">🧭</button><button id="herebtn">📍 여기</button><button id="calbtn">⚙ 보정</button></div>
+        <div class="tb r"><button id="gpsbtn">📡 GPS</button></div>
+        <div id="modehint"></div>
+        <svg id="svg" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
       <div id="hud">
         <div class="top"><div id="arrow">➤</div><div class="t"><b id="hud-name">목적지를 선택하세요</b><span id="hud-sub">지도의 핀을 누르거나 “지금” 탭에서 선택</span></div><div id="dist">—</div></div>
@@ -110,23 +112,44 @@
 <script>
 const TZ = 'Pacific/Honolulu';
 const $ = s => document.querySelector(s);
-const N = window.NODES, E = window.EDGES, S = window.SCHEDULE, B = window.BLOCKS;
+const N = window.NODES, E = window.EDGES, S = window.SCHEDULE, IMG = window.MAP_IMG, K = window.PX_SCALE;
 const FLOOR = { L:'L층 (로비)', '1':'1층 (로비 아래)', out:'실외' };
-const fl = f => `<span class="fl f${f}">${FLOOR[f]}</span>`;
+const fl = f => f ? `<span class="fl f${f}">${FLOOR[f]}</span>` : '';
+for (const k in N) N[k].P = [N[k].px[0]*K, N[k].px[1]*K];   // 실제 픽셀
 
-// ---------- 좌표계: 미터. x=북(+), y=동/내륙(+). 바다가 위, Lahaina Tower가 왼쪽 ----------
-const ORIGIN = { lat:20.9117, lng:-156.6937 };
-const M_LAT = 111320, M_LNG = 111320*Math.cos(ORIGIN.lat*Math.PI/180);
-const toXY = p => ({ x:(p.lat-ORIGIN.lat)*M_LAT, y:(p.lng-ORIGIN.lng)*M_LNG });
-const distM = (a,b) => { const A=toXY(a), C=toXY(b); return Math.hypot(A.x-C.x, A.y-C.y); };
-const bearing = (a,b) => { const A=toXY(a), C=toXY(b); return (Math.atan2(C.y-A.y, C.x-A.x)*180/Math.PI+360)%360; }; // 0=북, 90=동
+// ---------- GPS ↔ 픽셀 아핀 변환 (최소제곱) ----------
+const ORIGIN = { lat:20.9117, lng:-156.6937 }, M_LAT = 111320, M_LNG = 111320*Math.cos(ORIGIN.lat*Math.PI/180);
+const geoNE = p => [(p.lat-ORIGIN.lat)*M_LAT, (p.lng-ORIGIN.lng)*M_LNG];
+let AF = null;   // { ax:[a,b,c], ay:[d,e,f], inv, scale(px/m) }
+function solve3(rows, ys) {
+  const A = [0,1,2].map(i => [0,1,2].map(j => rows.reduce((s,r)=>s+r[i]*r[j],0)).concat([rows.reduce((s,r,n)=>s+r[i]*ys[n],0)]));
+  for (let i=0;i<3;i++) { let p=i; for (let r=i+1;r<3;r++) if (Math.abs(A[r][i])>Math.abs(A[p][i])) p=r; [A[i],A[p]]=[A[p],A[i]];
+    for (let r=0;r<3;r++) if (r!==i) { const f=A[r][i]/A[i][i]; for (let c=i;c<4;c++) A[r][c]-=f*A[i][c]; } }
+  return [0,1,2].map(i => A[i][3]/A[i][i]);
+}
+function fitAffine() {
+  let extra = []; try { extra = JSON.parse(localStorage.getItem('calib')||'[]'); } catch {}
+  const pts = [...window.CALIB.map(c=>({...c, P:[c.px[0]*K, c.px[1]*K]})), ...extra];
+  const rows = pts.map(c => [...geoNE(c), 1]);
+  const ax = solve3(rows, pts.map(c=>c.P[0])), ay = solve3(rows, pts.map(c=>c.P[1]));
+  const det = ax[0]*ay[1]-ax[1]*ay[0];
+  AF = { ax, ay, det, scale:Math.sqrt(Math.abs(det)), n:pts.length, extra,
+         inv:[ ay[1]/det, -ax[1]/det, -ay[0]/det, ax[0]/det ] };
+  for (const k in N) N[k].geo = pxToGeo(N[k].P);
+}
+const geoToPx = p => { const [n,e]=geoNE(p); return [AF.ax[0]*n+AF.ax[1]*e+AF.ax[2], AF.ay[0]*n+AF.ay[1]*e+AF.ay[2]]; };
+function pxToGeo(P) { const x=P[0]-AF.ax[2], y=P[1]-AF.ay[2], n=AF.inv[0]*x+AF.inv[1]*y, e=AF.inv[2]*x+AF.inv[3]*y; return { lat:ORIGIN.lat+n/M_LAT, lng:ORIGIN.lng+e/M_LNG }; }
+const distM = (a,b) => { const A=geoNE(a), C=geoNE(b); return Math.hypot(A[0]-C[0], A[1]-C[1]); };
+const bearing = (a,b) => { const A=geoNE(a), C=geoNE(b); return (Math.atan2(C[1]-A[1], C[0]-A[0])*180/Math.PI+360)%360; };
 const dirName = b => ['북','북동','동','남동','남','남서','서','북서'][Math.round(b/45)%8];
+// 지리 방위(0=북) → 안내도 화면 각도(deg, SVG rotate 기준: 0=오른쪽)
+function screenAngle(b) { const r=b*Math.PI/180, n=Math.cos(r), e=Math.sin(r); return Math.atan2(AF.ay[0]*n+AF.ay[1]*e, AF.ax[0]*n+AF.ax[1]*e)*180/Math.PI; }
+fitAffine();
 
 // ---------- time (HST) ----------
 function hstNow() {
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:TZ,hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
-  const h = +p.hour%24;
-  return { date:`${p.year}-${p.month}-${p.day}`, min:h*60+ +p.minute, hhmm:`${String(h).padStart(2,'0')}:${p.minute}` };
+  const h = +p.hour%24; return { date:`${p.year}-${p.month}-${p.day}`, min:h*60+ +p.minute, hhmm:`${String(h).padStart(2,'0')}:${p.minute}` };
 }
 const toMin = t => { const [h,m]=t.split(':').map(Number); return h*60+m; };
 const untilTxt = d => d<60 ? `${d}분` : `${Math.floor(d/60)}시간 ${d%60}분`;
@@ -138,13 +161,12 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => showPanel
 function showPanel(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id===id));
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.p===id));
-  if (id==='guide') { if (!watchId) startGps(); if (!target) { const a = autoTarget(); if (a) goTo(a); } }
+  if (id==='guide') { if (!watchId) startGps(); if (!target) { const a=autoTarget(); if (a) goTo(a); else fitView(); } }
 }
 function autoTarget() {
   const n = nowState(), day = S.find(d=>d.date===n.date); if (!day) return null;
   const live = day.items.find(i => i.v && toMin(i.s)<=n.min && n.min<toMin(i.e));
   const next = day.items.filter(i => i.v && toMin(i.s)>n.min).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
-  // 진행 중 세션이 끝나기 15분 전부터는 다음 세션으로
   if (live && !(next && toMin(live.e)-n.min<=15)) return live.v;
   return next ? next.v : (live ? live.v : null);
 }
@@ -165,8 +187,7 @@ function renderNow() {
   el.innerHTML = html;
 }
 function card(i, kind, until) {
-  const v = i.v ? N[i.v] : null;
-  const tag = kind==='live'?'진행 중':kind==='next'?'다음 일정':'이후';
+  const v = i.v ? N[i.v] : null, tag = kind==='live'?'진행 중':kind==='next'?'다음 일정':'이후';
   return `<div class="card ${kind==='live'?'live':''}">
     <div class="row"><div class="tag">${tag}</div><div class="until">${until}</div></div>
     <div class="time">${i.s} – ${i.e}</div><div class="title">${i.t}</div>${i.sub?`<div class="sub">${i.sub}</div>`:''}
@@ -174,12 +195,11 @@ function card(i, kind, until) {
     ${v?distLine(i.v):''}
     ${v?`<button class="go" onclick="goTo('${i.v}')">여기로 가기 →</button>`:`<button class="go off" disabled>리조트 밖 · 안내 없음</button>`}</div>`;
 }
-
 function distLine(k) {
-  if (!pos) return `<div class="sub">📡 위치 확인 중…</div>`;
+  if (!pos) return `<div class="sub">📡 위치 확인 중… (안내도에서 📍여기 로 직접 지정 가능)</div>`;
   const r = routeTo(k);
   if (r.total < 20) return `<div class="sub" style="color:var(--ok)">✅ 바로 여기 (${Math.round(r.total)}m)</div>`;
-  return `<div class="sub">🚶 현재 위치에서 <b style="color:var(--fg)">${Math.round(r.total)}m</b> · 도보 약 ${Math.max(1,Math.round(r.total/60))}분${r.stairs?' · 계단 포함':''}</div>`;
+  return `<div class="sub">🚶 ${pos.manual?'지정 위치':'현재 위치'}에서 <b style="color:var(--fg)">${Math.round(r.total)}m</b> · 도보 약 ${Math.max(1,Math.round(r.total/60))}분${r.stairs?' · 계단 포함':''}</div>`;
 }
 
 // ---------- schedule ----------
@@ -187,144 +207,158 @@ function renderSched() {
   const n = nowState(), di = selectedDay ?? Math.max(0, S.findIndex(d=>d.date===n.date)), day = S[di];
   let html = `<div class="days">${S.map((d,k)=>`<button class="${k===di?'on':''}" onclick="selectedDay=${k};renderSched()">${d.day}</button>`).join('')}</div>`;
   day.items.forEach(i => {
-    const today = day.date===n.date, sm=toMin(i.s), em=toMin(i.e);
-    const cls = today ? (n.min>=em?'past':(n.min>=sm?'live':'')) : '';
+    const today = day.date===n.date, sm=toMin(i.s), em=toMin(i.e), cls = today ? (n.min>=em?'past':(n.min>=sm?'live':'')) : '';
     const v = i.v ? N[i.v] : null;
     html += `<div class="item ${cls}"><div class="time">${i.s}<br>${i.e}</div><div style="flex:1"><div class="title">${i.t}</div>${i.sub?`<div class="sub">${i.sub}</div>`:''}
       <div class="sub">📍 ${v?v.name:i.place}${i.room?` · ${i.room}`:''}${v?fl(v.floor):''}</div>
       ${v?`<button class="go" style="padding:5px 10px;font-size:12px" onclick="goTo('${i.v}')">여기로 가기 →</button>`:''}</div></div>`;
   });
-  html += `<details><summary>원본 리조트 안내도 보기</summary><img src="assets/resort-map.png" alt="리조트 안내도"></details>`;
+  html += `<details><summary>⚙ 보정 데이터 (${AF.n}점 · 추가 ${AF.extra.length}점)</summary><pre id="calpre">${JSON.stringify(AF.extra)}</pre>
+    <button onclick="navigator.clipboard?.writeText($('#calpre').textContent)">복사</button><button onclick="localStorage.removeItem('calib');fitAffine();renderSched();redraw()">추가점 초기화</button></details>`;
   $('#sched').innerHTML = html;
 }
 
 // ---------- graph ----------
 const adj = {};
-for (const [a,b,opt] of E) {
-  const w = distM(N[a],N[b]) + (opt?.stairs?40:0);
-  (adj[a] ||= []).push({ to:b, w, opt }); (adj[b] ||= []).push({ to:a, w, opt });
+function buildGraph() {
+  for (const k in adj) delete adj[k];
+  for (const [a,b,opt] of E) { const w = distM(N[a].geo,N[b].geo) + (opt?.stairs?40:0); (adj[a] ||= []).push({to:b,w,opt}); (adj[b] ||= []).push({to:a,w,opt}); }
 }
 function dijkstra(src, dst) {
-  const d = {}, prev = {}, seen = new Set(); Object.keys(N).forEach(k=>d[k]=Infinity); d[src]=0;
-  while (true) {
-    let u=null; for (const k in d) if (!seen.has(k) && (u===null || d[k]<d[u])) u=k;
-    if (u===null || d[u]===Infinity) break; if (u===dst) break; seen.add(u);
-    for (const e of adj[u]||[]) if (d[u]+e.w < d[e.to]) { d[e.to]=d[u]+e.w; prev[e.to]={from:u,opt:e.opt}; }
-  }
+  const d={}, prev={}, seen=new Set(); Object.keys(N).forEach(k=>d[k]=Infinity); d[src]=0;
+  while (true) { let u=null; for (const k in d) if (!seen.has(k) && (u===null||d[k]<d[u])) u=k; if (u===null||d[u]===Infinity||u===dst) break; seen.add(u);
+    for (const e of adj[u]||[]) if (d[u]+e.w<d[e.to]) { d[e.to]=d[u]+e.w; prev[e.to]={from:u,opt:e.opt}; } }
   if (d[dst]===Infinity) return null;
-  const path=[]; for (let k=dst; k; k=prev[k]?.from) { path.unshift({k, opt:prev[k]?.opt}); if (k===src) break; }
+  const path=[]; for (let k=dst;k;k=prev[k]?.from) { path.unshift({k,opt:prev[k]?.opt}); if (k===src) break; }
   return { path, len:d[dst] };
 }
+function nearestNode(p) { let best=null, bd=Infinity; for (const k in N) { const dd=distM(p,N[k].geo); if (dd<bd) { bd=dd; best=k; } } return { k:best, d:bd }; }
 function routeTo(k) {
-  const near = nearestNode(pos), r = dijkstra(near.k, k), straight = distM(pos, N[k]);
-  if (!r) return { total:straight, path:[], first:N[k], stairs:false };
-  const stairs = r.path.some(s=>s.opt?.stairs);
-  const total = Math.min(straight, near.d + r.len - (stairs?40:0));
-  const first = r.path.length>1 && near.d<8 ? N[r.path[1].k] : N[r.path[0].k];
-  return { total, path:r.path, first, stairs, near };
-}
-function nearestNode(p) {
-  let best=null, bd=Infinity;
-  for (const k in N) { const dd=distM(p,N[k]); if (dd<bd) { bd=dd; best=k; } }
-  return { k:best, d:bd };
+  const near = nearestNode(pos), r = dijkstra(near.k, k), straight = distM(pos, N[k].geo);
+  if (!r) return { total:straight, path:[], first:N[k].geo, stairs:false };
+  const stairs = r.path.some(s=>s.opt?.stairs), total = Math.min(straight, near.d + r.len - (stairs?40:0));
+  const first = (r.path.length>1 && near.d<8 ? N[r.path[1].k] : N[r.path[0].k]).geo;
+  return { total, path:r.path, first, stairs };
 }
 
 // ---------- SVG map ----------
 const svg = $('#svg'), NS='http://www.w3.org/2000/svg';
-const el = (t, a, txt) => { const e=document.createElementNS(NS,t); for (const k in a) e.setAttribute(k,a[k]); if (txt!=null) e.textContent=txt; return e; };
-const P = {}; for (const k in N) P[k]=toXY(N[k]);
-// blocks
-for (const b of B) {
-  const g = el('g',{});
-  g.appendChild(el('rect',{ class:b.kind, x:b.x, y:b.y, width:b.w, height:b.h }));
-  g.appendChild(el('text',{ class:b.kind==='sea'?'sea-t':'blk-t', x:b.x+3, y:b.y+(b.kind==='sea'?b.h-4:8) }, b.label));
-  svg.appendChild(g);
-}
-// compass
-svg.appendChild(el('text',{class:'rose',x:230,y:-22},'N →'));
-svg.appendChild(el('text',{class:'rose',x:-20,y:-22},'▲ 바다 / 서'));
-// edges
-for (const [a,b] of E) svg.appendChild(el('line',{ class:'edge', x1:P[a].x, y1:P[a].y, x2:P[b].x, y2:P[b].y }));
-const routeEl = el('polyline',{ class:'route', points:'' }); svg.appendChild(routeEl);
-// nodes + labels (겹치는 라벨은 오프셋)
-const OFF = { mediaLounge:[-34,-4], monarchy14:[4,-9], monarchy57:[4,10], sunsetTerrace:[4,3], lahElev:[4,-4], lahaina12:[-4,-8], lahaina34:[-14,11], halonaKai:[4,-6], recCenter:[4,-4], jacuzzi:[-14,-6], napiliElev:[4,-6], smoking:[4,3] };
+const el = (t,a,txt) => { const e=document.createElementNS(NS,t); for (const k in a) e.setAttribute(k,a[k]); if (txt!=null) e.textContent=txt; return e; };
+let VB = [0,0,IMG.w,IMG.h];
+const setVB = () => svg.setAttribute('viewBox', VB.join(' '));
+svg.appendChild(el('image',{ href:IMG.src, x:0, y:0, width:IMG.w, height:IMG.h }));
+const gEdges = el('g',{}), route2 = el('polyline',{class:'route2',points:''}), routeEl = el('polyline',{class:'route',points:''}), gCal = el('g',{}), gPins = el('g',{});
+svg.append(gEdges, route2, routeEl, gCal, gPins);
+for (const [a,b] of E) gEdges.appendChild(el('line',{class:'edge',x1:N[a].P[0],y1:N[a].P[1],x2:N[b].P[0],y2:N[b].P[1]}));
+const OFF = { mediaLounge:[18,-8], monarchy14:[-150,44], monarchy57:[20,38], sunsetTerrace:[18,-14], lahElev:[-20,44], lahaina12:[18,-6], lahaina34:[-190,40], halonaKai:[-40,-16], atriumElev:[-110,44], recCenter:[16,-12], jacuzzi:[-40,-14], napiliElev:[-120,-16], smoking:[-120,44] };
 const nodeEls = {};
-for (const k in N) {
-  if (!N[k].venue) continue;
-  const g = el('g',{ 'data-k':k }); g.style.cursor='pointer';
-  g.appendChild(el('circle',{ class:'node', cx:P[k].x, cy:P[k].y, r:3 }));
-  const o = OFF[k] ?? [4,2];
-  g.appendChild(el('text',{ class:'lbl', x:P[k].x+o[0], y:P[k].y+o[1]+2 }, N[k].name));
-  g.onclick = () => goTo(k); svg.appendChild(g); nodeEls[k]=g;
-}
-const meAcc = el('circle',{ class:'meacc', r:0, cx:-999, cy:-999 }), meDot = el('circle',{ class:'me', r:3.5, cx:-999, cy:-999 }), meHead = el('path',{ class:'meh', d:'M0,-9 L4,-2 L-4,-2 Z', visibility:'hidden' });
-svg.appendChild(meAcc); svg.appendChild(meDot); svg.appendChild(meHead);
+for (const k in N) { if (!N[k].venue) continue; const o=OFF[k]||[18,10], g=el('g',{}); g.style.cursor='pointer';
+  g.appendChild(el('circle',{class:'node',cx:N[k].P[0],cy:N[k].P[1],r:13}));
+  g.appendChild(el('text',{class:'lbl',x:N[k].P[0]+o[0],y:N[k].P[1]+o[1]}, N[k].name));
+  gPins.appendChild(g); nodeEls[k]=g; }
+const meAcc = el('circle',{class:'meacc',r:0,cx:-9999,cy:-9999}), meG = el('g',{visibility:'hidden'});
+const meDot = el('circle',{class:'me',r:14,cx:0,cy:0}), meArr = el('path',{class:'me',d:'M0,-34 L20,6 L0,-4 L-20,6 Z',visibility:'hidden'});
+meG.append(meDot, meArr); svg.append(meAcc, meG);
+function drawCal() { gCal.innerHTML=''; AF.extra.forEach((c,i)=>{ gCal.appendChild(el('circle',{class:'cal',cx:c.P[0],cy:c.P[1],r:16})); gCal.appendChild(el('text',{class:'cal-t',x:c.P[0]+18,y:c.P[1]+8},`보정${i+1}`)); }); }
+function redraw() { buildGraph(); drawCal(); drawMe(); update(); }
 
-// ---------- GPS ----------
-let pos=null, heading=null, target=null, watchId=null;
+// pan / zoom
+let ptrs = new Map(), pinch0 = null, drag0 = null, moved = 0;
+svg.addEventListener('pointerdown', e => { svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0;
+  if (ptrs.size===1) drag0={x:e.clientX,y:e.clientY,vb:[...VB]}; if (ptrs.size===2) { const [a,b]=[...ptrs.values()]; pinch0={d:Math.hypot(a[0]-b[0],a[1]-b[1]),vb:[...VB],mid:[(a[0]+b[0])/2,(a[1]+b[1])/2]}; } });
+svg.addEventListener('pointermove', e => { if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId,[e.clientX,e.clientY]); const sc = Math.max(VB[2]/svg.clientWidth, VB[3]/svg.clientHeight);
+  if (ptrs.size===1 && drag0) { const dx=e.clientX-drag0.x, dy=e.clientY-drag0.y; moved=Math.max(moved,Math.hypot(dx,dy)); VB=[drag0.vb[0]-dx*sc, drag0.vb[1]-dy*sc, VB[2], VB[3]]; setVB(); }
+  else if (ptrs.size===2 && pinch0) { const [a,b]=[...ptrs.values()]; const d=Math.hypot(a[0]-b[0],a[1]-b[1]); const z=Math.max(.5,Math.min(3,pinch0.d/d)); moved=99;
+    const w=pinch0.vb[2]*z, h=pinch0.vb[3]*z, r=svg.getBoundingClientRect(), fx=(pinch0.mid[0]-r.left)/r.width, fy=(pinch0.mid[1]-r.top)/r.height;
+    VB=[pinch0.vb[0]+pinch0.vb[2]*fx-w*fx, pinch0.vb[1]+pinch0.vb[3]*fy-h*fy, w, h]; setVB(); } });
+svg.addEventListener('pointerup', e => { const wasTap = ptrs.size===1 && moved<8; ptrs.delete(e.pointerId); drag0=null; if (ptrs.size<2) pinch0=null; if (wasTap) onTap(e); });
+svg.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); drag0=null; pinch0=null; });
+svg.addEventListener('wheel', e => { e.preventDefault(); const z=e.deltaY>0?1.15:0.87, r=svg.getBoundingClientRect(), fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height; VB=[VB[0]+VB[2]*fx*(1-z), VB[1]+VB[3]*fy*(1-z), VB[2]*z, VB[3]*z]; setVB(); }, {passive:false});
+function clientToPx(e) { const r=svg.getBoundingClientRect(); const sw=VB[2]/r.width, sh=VB[3]/r.height, s=Math.max(sw,sh); const ox=(r.width-VB[2]/s)/2, oy=(r.height-VB[3]/s)/2; return [VB[0]+(e.clientX-r.left-ox)*s, VB[1]+(e.clientY-r.top-oy)*s]; }
+function fitView(pts) {
+  if (!pts || !pts.length) { VB=[0,0,IMG.w,IMG.h]; setVB(); return; }
+  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]); let x0=Math.min(...xs)-200, y0=Math.min(...ys)-200, w=Math.max(...xs)-x0+200, h=Math.max(...ys)-y0+200;
+  const r=svg.getBoundingClientRect(), asp=r.width/r.height; if (w/h<asp) { const nw=h*asp; x0-=(nw-w)/2; w=nw; } else { const nh=w/asp; y0-=(nh-h)/2; h=nh; }
+  w=Math.max(w,700); h=Math.max(h,700/asp); VB=[x0,y0,w,h]; setVB();
+}
+
+// ---------- modes: 📍여기 (수동 위치) / ⚙보정 ----------
+let mode = 'none';
+function setMode(m) { mode = mode===m ? 'none' : m; $('#herebtn').classList.toggle('on', mode==='here'); $('#calbtn').classList.toggle('on', mode==='cal');
+  const h=$('#modehint'); h.style.display = mode==='none'?'none':'block';
+  h.textContent = mode==='here' ? '지도에서 지금 서 있는 곳을 탭하세요 (GPS 대신 이 위치로 안내)' : `지금 서 있는 곳을 탭하면 GPS↔안내도 보정점이 추가됩니다 (현재 ${AF.n}점)`; }
+$('#herebtn').onclick = () => setMode('here'); $('#calbtn').onclick = () => setMode('cal');
+function onTap(e) {
+  const P = clientToPx(e);
+  if (mode==='none') {   // 핀 탭 → 목적지
+    let best=null, bd=Infinity; for (const k in nodeEls) { const d=Math.hypot(N[k].P[0]-P[0], N[k].P[1]-P[1]); if (d<bd) { bd=d; best=k; } }
+    if (best && bd < 70) goTo(best); return;
+  }
+  if (mode==='here') { pos = { ...pxToGeo(P), acc:8, manual:true }; setMode('none'); $('#gpsbtn').textContent='📡 GPS로 복귀'; drawMe(); update(); renderNow(); }
+  else if (mode==='cal') {
+    if (!gps) { $('#modehint').textContent='GPS 위치가 아직 없습니다. 잠시 후 다시 탭하세요'; return; }
+    const extra = AF.extra.concat([{ P, lat:gps.lat, lng:gps.lng, acc:Math.round(gps.acc) }]); localStorage.setItem('calib', JSON.stringify(extra));
+    fitAffine(); setMode('none'); redraw(); renderSched(); $('#modehint').style.display='block'; $('#modehint').textContent=`보정점 추가됨 (총 ${AF.n}점). 일정 탭 하단에서 복사 가능`; setTimeout(()=>{ if (mode==='none') $('#modehint').style.display='none'; }, 3000);
+  }
+}
+
+// ---------- GPS / compass ----------
+let pos=null, gps=null, heading=null, target=null, watchId=null;
 function startGps() {
   if (!navigator.geolocation) { $('#gpsbtn').textContent='GPS 미지원'; return; }
   $('#gpsbtn').textContent='📡 검색 중…';
   watchId = navigator.geolocation.watchPosition(p => {
-    pos = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy };
+    gps = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy };
     if (p.coords.heading!=null && p.coords.speed>0.5) heading=p.coords.heading;
-    const xy = toXY(pos), inside = xy.x>-25&&xy.x<275&&xy.y>-35&&xy.y<310;
-    const cx = Math.max(-22, Math.min(272, xy.x)), cy = Math.max(-32, Math.min(307, xy.y));
-    meDot.setAttribute('cx',cx); meDot.setAttribute('cy',cy);
-    meAcc.setAttribute('cx',cx); meAcc.setAttribute('cy',cy); meAcc.setAttribute('r', Math.min(pos.acc, 60));
-    $('#gpsbtn').textContent = `📡 ±${Math.round(pos.acc)}m${inside?'':' · 범위 밖'}`;
-    update(); if ($('#now').classList.contains('on')) renderNow();
+    if (!pos?.manual) { pos = { ...gps }; $('#gpsbtn').textContent=`📡 ±${Math.round(gps.acc)}m`; drawMe(); update(); if ($('#now').classList.contains('on')) renderNow(); }
   }, e => { $('#gpsbtn').textContent='📡 '+(e.code===1?'권한 거부':'오류'); }, { enableHighAccuracy:true, maximumAge:2000, timeout:15000 });
 }
-$('#gpsbtn').onclick = () => { if (!pos) startGps(); };
+$('#gpsbtn').onclick = () => { if (pos?.manual) { pos = gps ? {...gps} : null; $('#gpsbtn').textContent = gps?`📡 ±${Math.round(gps.acc)}m`:'📡 검색 중…'; drawMe(); update(); renderNow(); }
+  else if (!watchId) startGps(); else if (pos) fitView([geoToPx(pos)]); };
 $('#compassbtn').onclick = async () => {
-  try {
-    if (typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission) { if (await DeviceOrientationEvent.requestPermission()!=='granted') throw 0; }
-    window.addEventListener('deviceorientationabsolute', onOrient, true); window.addEventListener('deviceorientation', onOrient, true);
-    $('#compassbtn').textContent='🧭 켜짐';
-  } catch { $('#compassbtn').textContent='🧭 권한 없음'; }
+  try { if (typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission) { if (await DeviceOrientationEvent.requestPermission()!=='granted') throw 0; }
+    window.addEventListener('deviceorientationabsolute', onOrient, true); window.addEventListener('deviceorientation', onOrient, true); $('#compassbtn').textContent='🧭 ON'; $('#compassbtn').classList.add('on');
+  } catch { $('#compassbtn').textContent='🧭 ✕'; }
 };
-function onOrient(e) {
-  let h=null; if (e.webkitCompassHeading!=null) h=e.webkitCompassHeading; else if (e.absolute && e.alpha!=null) h=(360-e.alpha)%360;
-  if (h!=null) { heading=h; update(); }
+function onOrient(e) { let h=null; if (e.webkitCompassHeading!=null) h=e.webkitCompassHeading; else if (e.absolute && e.alpha!=null) h=(360-e.alpha)%360; if (h!=null) { heading=h; drawMe(); update(); } }
+
+function drawMe() {
+  if (!pos) { meG.setAttribute('visibility','hidden'); return; }
+  const P = geoToPx(pos), inside = P[0]>-100&&P[0]<IMG.w+100&&P[1]>-100&&P[1]<IMG.h+100;
+  const cx=Math.max(-80,Math.min(IMG.w+80,P[0])), cy=Math.max(-80,Math.min(IMG.h+80,P[1]));
+  meG.setAttribute('visibility','visible'); meDot.classList.toggle('manual', !!pos.manual); meArr.classList.toggle('manual', !!pos.manual);
+  meAcc.setAttribute('cx',cx); meAcc.setAttribute('cy',cy); meAcc.setAttribute('r', pos.manual?0:Math.min(pos.acc,80)*AF.scale);
+  if (heading!=null) { meArr.setAttribute('visibility','visible'); meDot.setAttribute('r',8); meG.setAttribute('transform',`translate(${cx},${cy}) rotate(${screenAngle(heading)+90})`); }
+  else { meArr.setAttribute('visibility','hidden'); meDot.setAttribute('r',14); meG.setAttribute('transform',`translate(${cx},${cy})`); }
+  if (!inside && !pos.manual) $('#gpsbtn').textContent = `📡 ±${Math.round(pos.acc)}m · 범위 밖`;
 }
 
 // ---------- navigate ----------
 function goTo(k) {
   target=k; showPanel('guide');
-  for (const kk in nodeEls) { nodeEls[kk].querySelector('circle').classList.toggle('tgt', kk===k); nodeEls[kk].querySelector('text').classList.toggle('tgt', kk===k); }
-  update();
+  for (const kk in nodeEls) { nodeEls[kk].querySelector('circle').classList.toggle('tgt',kk===k); nodeEls[kk].querySelector('text').classList.toggle('tgt',kk===k); }
+  fitView(pos ? [geoToPx(pos), N[k].P] : [N[k].P]); update();
 }
 function update() {
-  // heading marker on map (지도 좌표계: 0°=북=오른쪽 → 화면 회전 = heading+90)
-  if (pos && heading!=null) { meHead.setAttribute('visibility','visible'); meHead.setAttribute('transform',`translate(${meDot.getAttribute('cx')},${meDot.getAttribute('cy')}) rotate(${heading+90})`); }
   if (!target) return;
-  const v = N[target];
-  $('#hud-name').innerHTML = v.name + fl(v.floor);
-  if (!pos) { $('#hud-sub').textContent='GPS 위치 찾는 중…'; $('#dist').textContent='—'; $('#steps').textContent=''; routeEl.setAttribute('points',''); return; }
-  const r = routeTo(target), straight = distM(pos, v);
-  if (straight < 20) {
-    routeEl.setAttribute('points',''); $('#dist').textContent=`${Math.round(straight)}m`;
-    $('#hud-sub').textContent = `도착 · ${v.note||''}`; $('#steps').innerHTML = `✅ 목적지 근처입니다. ${fl(v.floor)} 확인`; setArrow(bearing(pos,v)); return;
-  }
-  const pts = [toXY(pos), ...r.path.map(s=>P[s.k])];
-  routeEl.setAttribute('points', pts.map(p=>`${p.x},${p.y}`).join(' '));
+  const v = N[target]; $('#hud-name').innerHTML = v.name + fl(v.floor) + (v.est?' <small style="color:var(--acc)">위치 추정</small>':'');
+  if (!pos) { $('#hud-sub').textContent='GPS 위치 찾는 중… (📍여기 로 직접 지정 가능)'; $('#dist').textContent='—'; $('#steps').textContent=''; routeEl.setAttribute('points',''); route2.setAttribute('points',''); return; }
+  const r = routeTo(target), straight = distM(pos, v.geo);
+  if (straight < 20) { routeEl.setAttribute('points',''); route2.setAttribute('points',''); $('#dist').textContent=`${Math.round(straight)}m`; $('#hud-sub').textContent=`도착 · ${v.note||''}`; $('#steps').innerHTML=`✅ 목적지 근처입니다. ${fl(v.floor)} 확인`; setArrow(bearing(pos,v.geo)); return; }
+  const pts = [geoToPx(pos), ...r.path.map(s=>N[s.k].P)].map(p=>p.join(',')).join(' ');
+  routeEl.setAttribute('points',pts); route2.setAttribute('points',pts);
   const b = bearing(pos, r.first);
-  $('#dist').textContent = `${Math.round(r.total)}m`;
-  $('#hud-sub').textContent = `${dirName(b)}쪽으로 · 도보 약 ${Math.max(1,Math.round(r.total/60))}분 · ${v.note||''}`;
-  const steps = r.path.map((s,i) => (s.opt?.stairs?`<b>↕ ${s.opt.msg}</b> → `:'') + (i===r.path.length-1?`<b>${N[s.k].name}</b>`:N[s.k].name)).join(' → ');
-  $('#steps').innerHTML = steps;
+  $('#dist').textContent=`${Math.round(r.total)}m`;
+  $('#hud-sub').textContent=`${dirName(b)}쪽으로 · 도보 약 ${Math.max(1,Math.round(r.total/60))}분 · ${v.note||''}`;
+  const named = r.path.filter(s=>N[s.k].name||s.opt?.stairs);
+  $('#steps').innerHTML = named.map((s,i)=>(s.opt?.stairs?`<b>↕ ${s.opt.msg}</b> → `:'')+(i===named.length-1?`<b>${N[s.k].name}</b>`:(N[s.k].name||''))).filter(Boolean).join(' → ');
   setArrow(b);
 }
-function setArrow(b) {
-  const rel = heading!=null ? b-heading : b;
-  $('#arrow').style.transform = `rotate(${rel-90}deg)`;
-  $('#arrow').style.color = heading!=null ? 'var(--ok)' : 'var(--dim)';
-}
+function setArrow(b) { const rel = heading!=null ? b-heading : b; $('#arrow').style.transform=`rotate(${rel-90}deg)`; $('#arrow').style.color = heading!=null?'var(--ok)':'var(--dim)'; }
 
 // ---------- boot ----------
 function tick() { $('#clock').firstChild.nodeValue = nowState().hhmm; }
-tick(); renderNow(); renderSched(); startGps();
+buildGraph(); drawCal(); setVB(); tick(); renderNow(); renderSched(); startGps();
 setInterval(()=>{ tick(); renderNow(); if ($('#sched').classList.contains('on')) renderSched(); }, 30000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
