@@ -48,7 +48,7 @@
   #modehint { position:absolute; left:8px; right:8px; bottom:8px; z-index:5; background:rgba(11,26,58,.92); color:#ffd58a; border-radius:8px; padding:6px 10px; font-size:12px; display:none; }
   #hud { flex:none; background:var(--card); border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)/2); }
   #hud .top { display:flex; align-items:center; gap:12px; }
-  #arrow { width:48px; height:48px; flex:none; display:grid; place-items:center; border-radius:50%; background:var(--bg); font-size:30px; transition:transform .2s; }
+  #arrow { width:64px; height:64px; flex:none; display:grid; place-items:center; border-radius:50%; background:var(--bg); font-size:42px; transition:transform .2s; }
   #hud .t { flex:1; min-width:0; }
   #hud .t b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #hud .t span { color:var(--dim); font-size:12px; }
@@ -250,14 +250,14 @@ svg.appendChild(el('image',{ href:IMG.src, x:0, y:0, width:IMG.w, height:IMG.h }
 const gEdges = el('g',{}), route2 = el('polyline',{class:'route2',points:''}), routeEl = el('polyline',{class:'route',points:''}), gCal = el('g',{}), gPins = el('g',{});
 svg.append(gEdges, route2, routeEl, gCal, gPins);
 for (const [a,b] of E) gEdges.appendChild(el('line',{class:'edge',x1:N[a].P[0],y1:N[a].P[1],x2:N[b].P[0],y2:N[b].P[1]}));
-const OFF = { mediaLounge:[18,-8], monarchy14:[-150,44], monarchy57:[20,38], sunsetTerrace:[18,-14], lahElev:[-20,44], lahaina12:[18,-6], lahaina34:[-190,40], halonaKai:[-40,-16], atriumElev:[-110,44], recCenter:[16,-12], jacuzzi:[-40,-14], napiliElev:[-120,-16], smoking:[-120,44] };
+const OFF = { mediaLounge:[18,10], monarchy14:[-150,44], monarchy57:[20,38], sunsetTerrace:[-60,-18], lahElev:[-20,44], lahaina12:[18,-6], lahaina34:[-190,40], halonaKai:[-90,-18], atriumElev:[-110,44], recCenter:[16,-12], jacuzzi:[-40,-14], napiliElev:[-120,-16], smoking:[-120,44] };
 const nodeEls = {};
 for (const k in N) { if (!N[k].venue) continue; const o=OFF[k]||[18,10], g=el('g',{}); g.style.cursor='pointer';
   g.appendChild(el('circle',{class:'node',cx:N[k].P[0],cy:N[k].P[1],r:13}));
   g.appendChild(el('text',{class:'lbl',x:N[k].P[0]+o[0],y:N[k].P[1]+o[1]}, N[k].name));
   gPins.appendChild(g); nodeEls[k]=g; }
 const meAcc = el('circle',{class:'meacc',r:0,cx:-9999,cy:-9999}), meG = el('g',{visibility:'hidden'});
-const meDot = el('circle',{class:'me',r:14,cx:0,cy:0}), meArr = el('path',{class:'me',d:'M0,-34 L20,6 L0,-4 L-20,6 Z',visibility:'hidden'});
+const meDot = el('circle',{class:'me',r:14,cx:0,cy:0}), meArr = el('path',{class:'me',d:'M0,-64 L38,16 L0,0 L-38,16 Z',visibility:'hidden'});
 meG.append(meDot, meArr); svg.append(meAcc, meG);
 function drawCal() { gCal.innerHTML=''; AF.extra.forEach((c,i)=>{ gCal.appendChild(el('circle',{class:'cal',cx:c.P[0],cy:c.P[1],r:16})); gCal.appendChild(el('text',{class:'cal-t',x:c.P[0]+18,y:c.P[1]+8},`보정${i+1}`)); }); }
 function redraw() { buildGraph(); drawCal(); drawMe(); update(); }
@@ -328,7 +328,7 @@ function drawMe() {
   const cx=Math.max(-80,Math.min(IMG.w+80,P[0])), cy=Math.max(-80,Math.min(IMG.h+80,P[1]));
   meG.setAttribute('visibility','visible'); meDot.classList.toggle('manual', !!pos.manual); meArr.classList.toggle('manual', !!pos.manual);
   meAcc.setAttribute('cx',cx); meAcc.setAttribute('cy',cy); meAcc.setAttribute('r', pos.manual?0:Math.min(pos.acc,80)*AF.scale);
-  if (heading!=null) { meArr.setAttribute('visibility','visible'); meDot.setAttribute('r',8); meG.setAttribute('transform',`translate(${cx},${cy}) rotate(${screenAngle(heading)+90})`); }
+  if (heading!=null) { meArr.setAttribute('visibility','visible'); meDot.setAttribute('r',10); meG.setAttribute('transform',`translate(${cx},${cy}) rotate(${screenAngle(heading)+90})`); }
   else { meArr.setAttribute('visibility','hidden'); meDot.setAttribute('r',14); meG.setAttribute('transform',`translate(${cx},${cy})`); }
   if (!inside && !pos.manual) $('#gpsbtn').textContent = `📡 ±${Math.round(pos.acc)}m · 범위 밖`;
 }

@@ -19,18 +19,18 @@ window.CALIB = [
 // px 는 안내도 상 아이콘 위치(실측 GPS 와 별개). est:true 는 안내도 상 위치 추정.
 window.NODES = {
   // 목적지
-  sunsetTerrace:{ name:'Sunset Terrace',            px:[345,365],  floor:'1', venue:true, note:'안내도 1번 · 로비에서 계단 ↓' },
+  sunsetTerrace:{ name:'Sunset Terrace',            px:[450,405],  floor:'1', venue:true, note:'입구는 18번 좌측 상단 · 로비에서 계단 ↓' },
   mediaLounge:  { name:'Media Lounge',              px:[480,440],  floor:'1', venue:true, note:'안내도 18번 · 로비에서 계단 ↓' },
   monarchy14:   { name:'Monarchy Ballroom 1-4',     px:[412,627],  floor:'1', venue:true, note:'안내도 33번 · 로비에서 계단 ↓ · 키노트' },
   monarchy57:   { name:'Monarchy 5-7',              px:[440,660],  floor:'1', venue:true, note:'33번 옆 · 데모' },
   lahElev:      { name:'Lahaina Tower 엘리베이터',   px:[655,665],  floor:'L', venue:true, note:'미팅룸 351·364(3층) / 479(4층) / 579(5층)' },
   lahaina12:    { name:'Lahaina Room 1 & 2',        px:[620,540],  floor:'L', venue:true, est:true, note:'Lahaina Tower 로비층' },
   lahaina34:    { name:'Lahaina Room 3 & 4',        px:[600,585],  floor:'L', venue:true, est:true, note:'Lahaina Tower 로비층' },
-  halonaKai:    { name:'Halona Kai Lawn',           px:[1200,565], floor:'L', venue:true, est:true, note:'Atrium Tower 옆 잔디 입구' },
-  atriumElev:   { name:'Atrium Tower 엘리베이터',    px:[1230,632], floor:'1', venue:true },
+  halonaKai:    { name:'Halona Kai Lawn',           px:[1235,510], floor:'L', venue:true, note:'입구는 44번 왼쪽 (Atrium Tower)' },
+  atriumElev:   { name:'Atrium Tower 엘리베이터',    px:[1230,632], floor:'1', venue:true, note:'28번 오른쪽 ↑↓' },
   recCenter:    { name:'레크리에이션 센터',           px:[1400,400], floor:'1', venue:true, est:true, note:'수영장 앞' },
   jacuzzi:      { name:'자쿠지',                    px:[1784,354], floor:'1', venue:true, est:true, note:'바다쪽' },
-  napiliElev:   { name:'Napili Tower 엘리베이터',    px:[1745,555], floor:'1', venue:true },
+  napiliElev:   { name:'Napili Tower 엘리베이터',    px:[1745,555], floor:'1', venue:true, note:'Napili Tower 안 TC 아래 ↑↓' },
   smoking:      { name:'흡연 구역',                  px:[1885,690], floor:'out', venue:true, note:'실외 · 도로 옆' },
   // 경유점 (빨간 도보길 위)
   bW:{px:[60,300]}, b1:{px:[200,240]}, b2:{px:[450,235]}, b3:{px:[700,215]}, b4:{px:[1000,190]}, b5:{px:[1090,170]}, b6:{px:[1500,130]}, b7:{px:[1720,150]}, b8:{px:[1750,185]},
