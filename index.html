@@ -172,7 +172,9 @@ function showPanel(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id===id));
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.p===id));
   if (id==='guide') { if (!watchId) startGps(); if (!target) { const a=autoTarget(); if (a) goTo(a); else fitView(); }
-    const h=$('#pinchhint'); h.classList.remove('show'); void h.offsetWidth; h.classList.add('show'); setTimeout(()=>h.classList.remove('show'), 2000); }
+    let seen=0; try { seen=+localStorage.getItem('pinchHint')||0; } catch {}
+    if (seen<3) { try { localStorage.setItem('pinchHint', seen+1); } catch {}
+      const h=$('#pinchhint'); h.classList.remove('show'); void h.offsetWidth; h.classList.add('show'); setTimeout(()=>h.classList.remove('show'), 2000); } }
 }
 function autoTarget() {
   const n = nowState(), day = S.find(d=>d.date===n.date); if (!day) return null;
