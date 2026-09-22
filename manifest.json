@@ -1,0 +1,9 @@
+{
+  "name": "Summit GPS – Snapdragon Summit 2026",
+  "short_name": "Summit GPS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1a3a",
+  "theme_color": "#0b1a3a",
+  "icons": [{ "src": "assets/icon.png", "sizes": "512x512", "type": "image/png" }]
+}
