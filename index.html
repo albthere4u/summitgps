@@ -431,6 +431,7 @@ $('#gatebtn').onclick = async () => {
   try { navigator.geolocation?.getCurrentPosition(()=>{}, ()=>{}, { enableHighAccuracy:true, timeout:10000 }); } catch {}
   startGps();
   await enableCompass();
+  showPanel('guide');   // 길을 잃고 앱을 연 상황: 바로 지도 + 현재/다음 세션 자동 목적지
 };
 // 이후에도 위치가 없거나 거부 상태면 터치 시 재요청
 document.addEventListener('touchend', () => { if (!$('#gate').classList.contains('show') && (!pos || gpsDenied)) startGps(); }, { capture:true, passive:true });
@@ -467,7 +468,7 @@ function drawMe() {
 
 // ---------- navigate ----------
 function goTo(k) {
-  target=k; showPanel('guide');
+  target=k; lastEdge=null; showPanel('guide');
   for (const kk in nodeEls) { nodeEls[kk].querySelector('circle').classList.toggle('tgt',kk===k); nodeEls[kk].querySelector('text').classList.toggle('tgt',kk===k); }
   if (VB[2] < IMG.w-1) fitView(pos ? [geoToPx(pos), N[k].P] : [N[k].P]); else fitView(); update();
 }
