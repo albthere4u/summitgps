@@ -1,52 +1,56 @@
-// 장소 좌표 — ★ 표시는 위성사진 기준 추정값. 현장 좌표 받으면 교체.
-// lat/lng: GPS 안내 도착점(입구). px: assets/resort-map.png(2126x1104) 위 핀 위치.
-// floor/note: 도착 직전 안내 문구.
-window.VENUES = {
-  monarchy14: {
-    name: 'Monarchy Ballroom 1-4',
-    lat: 20.91555, lng: -156.69470, estimated: true,
-    px: [560, 640],
-    note: 'Lahaina Tower 컨퍼런스 구역 · 볼룸 입구',
-  },
-  monarchy57: {
-    name: 'Monarchy 5-7 (데모)',
-    lat: 20.91545, lng: -156.69455, estimated: true,
-    px: [600, 700],
-    note: 'Monarchy 1-4와 같은 볼룸 구역',
-  },
-  lahaina12: {
-    name: 'Lahaina Room 1 & 2',
-    lat: 20.91600, lng: -156.69520, estimated: true,
-    px: [480, 590],
-    note: 'Lahaina Tower 미팅룸',
-  },
-  lahaina34: {
-    name: 'Lahaina Room 3 & 4',
-    lat: 20.91605, lng: -156.69510, estimated: true,
-    px: [500, 610],
-    note: 'Lahaina Tower 미팅룸',
-  },
-  lahainaTower: {
-    name: 'Lahaina Tower (엘리베이터)',
-    lat: 20.91580, lng: -156.69500, estimated: true,
-    px: [520, 660],
-    note: '엘리베이터로 해당 층 이동',
-  },
-  sunsetTerrace: {
-    name: 'Sunset Terrace',
-    lat: 20.91530, lng: -156.69540, estimated: true,
-    px: [880, 400],
-    note: 'Lahaina Pool 바다쪽 테라스',
-  },
-  halonaKai: {
-    name: 'Halona Kai Lawn',
-    lat: 20.91380, lng: -156.69360, estimated: true,
-    px: [1200, 380],
-    note: '해변 잔디',
-  },
+// ===== 지점(노드) =====
+// 현장 측정 좌표. floor: 'L'(로비층) | '1'(로비 아래층) | 'out'(실외)
+// venue:true 인 노드만 목적지로 선택 가능. 나머지는 경로 연결용 경유점.
+window.NODES = {
+  halonaKai:    { name:'Halona Kai Lawn',            lat:20.9128273, lng:-156.6922560, floor:'L',  venue:true, note:'잔디 · 로비층 높이' },
+  lahaina12:    { name:'Lahaina Room 1 & 2',         lat:20.9124108, lng:-156.6915433, floor:'L',  venue:true, note:'Lahaina Tower 로비층' },
+  lahaina34:    { name:'Lahaina Room 3 & 4',         lat:20.9123215, lng:-156.6913794, floor:'L',  venue:true, note:'Lahaina Tower 로비층' },
+  lahElev:      { name:'Lahaina Tower 엘리베이터',    lat:20.9125539, lng:-156.6912768, floor:'L',  venue:true, note:'미팅룸 351·364(3층) / 479(4층) / 579(5층)' },
+  lahElev1:     { name:'Lahaina 엘리베이터 (1층)',    lat:20.9125539, lng:-156.6912768, floor:'1',  venue:false },
+  mediaLounge:  { name:'Media Lounge',               lat:20.9119100, lng:-156.6913120, floor:'1',  venue:true, note:'로비 아래 1층' },
+  monarchy14:   { name:'Monarchy Ballroom 1-4',      lat:20.9119657, lng:-156.6912590, floor:'1',  venue:true, note:'로비 아래 1층 · 키노트' },
+  monarchy57:   { name:'Monarchy 5-7',               lat:20.9119429, lng:-156.6912533, floor:'1',  venue:true, note:'로비 아래 1층 · 데모' },
+  sunsetTerrace:{ name:'Sunset Terrace',             lat:20.9118715, lng:-156.6909908, floor:'1',  venue:true, note:'로비 아래 1층 · 식사' },
+  recCenter:    { name:'레크리에이션 센터 (수영장 앞)', lat:20.9128981, lng:-156.6926695, floor:'1',  venue:true, note:'수영장 앞' },
+  jacuzzi:      { name:'자쿠지',                     lat:20.9131361, lng:-156.6933377, floor:'1',  venue:true, note:'바다쪽' },
+  smoking:      { name:'흡연 구역',                   lat:20.9139200, lng:-156.6929196, floor:'out',venue:true, note:'실외' },
+  napiliElev:   { name:'Napili Tower 엘리베이터',     lat:20.9135683, lng:-156.6929377, floor:'1',  venue:true, note:'1층' },
 };
 
-// 일정 — 시간은 HST. venue가 null이면 리조트 밖(지도 안내 없음).
+// ===== 도보 이동로(간선) — 안내도 회색 점선 기준 추정. [from, to, 안내문구(선택)] =====
+// 층 이동 간선은 stairs:true → 거리 가중치 +40m, 안내에 "엘리베이터/계단" 문구.
+window.EDGES = [
+  ['lahElev','lahaina12'],
+  ['lahElev','lahaina34'],
+  ['lahaina12','lahaina34'],
+  ['lahElev','lahElev1', { stairs:true, msg:'엘리베이터/계단으로 1층 내려가기' }],
+  ['lahElev1','mediaLounge'],
+  ['lahElev1','monarchy14'],
+  ['mediaLounge','monarchy14'],
+  ['monarchy14','monarchy57'],
+  ['monarchy57','sunsetTerrace'],
+  ['monarchy14','sunsetTerrace'],
+  ['lahElev','halonaKai'],
+  ['lahaina12','halonaKai'],
+  ['halonaKai','recCenter'],
+  ['recCenter','jacuzzi'],
+  ['recCenter','napiliElev'],
+  ['napiliElev','smoking'],
+  ['jacuzzi','napiliElev'],
+];
+
+// ===== 도식 안내도 블록 (미터 좌표: x=북쪽으로 +, y=동쪽(내륙)으로 +) =====
+// 기준점 lat0/lng0 은 index.html 의 ORIGIN. 값은 눈대중 — 자유롭게 조정.
+window.BLOCKS = [
+  { kind:'sea',   label:'바다 (Kāʻanapali Beach)', x:-20, y:-30, w:320, h:40 },
+  { kind:'bldg',  label:'Napili Tower',          x:170, y:60,  w:75,  h:45 },
+  { kind:'pool',  label:'Lahaina Pool',          x:120, y:35,  w:60,  h:45 },
+  { kind:'lawn',  label:'Halona Kai Lawn',       x:95,  y:125, w:65,  h:45 },
+  { kind:'bldg',  label:'Lahaina Tower (L층)',   x:50,  y:205, w:65,  h:60 },
+  { kind:'bldg1', label:'컨퍼런스 구역 (1층)',    x:0,   y:230, w:55,  h:70 },
+];
+
+// ===== 일정 (HST). v: NODES 키. null 이면 리조트 밖(안내 없음) =====
 window.SCHEDULE = [
   { date: '2026-09-22', day: 'Day 1 · 화', items: [
     { s: '06:30', e: '07:30', t: 'Train Like a Manchester United Pro', v: 'halonaKai' },
@@ -54,7 +58,7 @@ window.SCHEDULE = [
     { s: '08:45', e: '11:00', t: 'CEO 비전 및 모바일 키노트 | Snapdragon for the Agentic Age', v: 'monarchy14' },
     { s: '12:00', e: '13:00', t: '중식', v: 'sunsetTerrace' },
     { s: '13:00', e: '14:00', t: 'Day 1 데모', v: 'monarchy57' },
-    { s: '14:00', e: '14:30', t: '두르가 말라디 – 6G 미디어 라운드테이블', sub: 'Durga Malladi, EVP, GM, Technology Planning, Edge Solutions, and Data Center', v: 'lahainaTower', room: 'Meeting Room 351 · 3층' },
+    { s: '14:00', e: '14:30', t: '두르가 말라디 – 6G 미디어 라운드테이블', sub: 'Durga Malladi, EVP, GM, Technology Planning, Edge Solutions, and Data Center', v: 'lahElev', room: 'Meeting Room 351 · 3층' },
     { s: '14:30', e: '15:30', t: '모바일 벤치마킹', v: 'lahaina12' },
     { s: '16:00', e: '16:45', t: '모바일 Q&A', v: 'lahaina34' },
     { s: '17:00', e: '21:00', t: '석식', v: null, place: 'Olowalu Plantation House (리조트 밖)' },
@@ -63,9 +67,9 @@ window.SCHEDULE = [
     { s: '06:30', e: '07:30', t: 'Train Like an F1 Driver', v: 'halonaKai' },
     { s: '06:30', e: '08:30', t: '조식', v: 'sunsetTerrace' },
     { s: '09:00', e: '11:30', t: '퍼스널 AI, 사운드 및 PC 키노트 | Snapdragon for the Agentic Age', v: 'monarchy14' },
-    { s: '11:30', e: '12:00', t: '크리스 패트릭 – 모바일 미디어 라운드테이블', sub: 'Chris Patrick, SVP & GM, Mobile Handset', v: 'lahainaTower', room: 'Executive Meeting Room 579 · 5층' },
+    { s: '11:30', e: '12:00', t: '크리스 패트릭 – 모바일 미디어 라운드테이블', sub: 'Chris Patrick, SVP & GM, Mobile Handset', v: 'lahElev', room: 'Executive Meeting Room 579 · 5층' },
     { s: '12:00', e: '12:45', t: '중식', v: 'sunsetTerrace' },
-    { s: '13:45', e: '14:30', t: '니틴 쿠마르 – 컴퓨트 미디어 라운드테이블', sub: 'Nitin Kumar, VP, Product Management', v: 'lahainaTower', room: 'Meeting Room 364 · 3층' },
+    { s: '13:45', e: '14:30', t: '니틴 쿠마르 – 컴퓨트 미디어 라운드테이블', sub: 'Nitin Kumar, VP, Product Management', v: 'lahElev', room: 'Meeting Room 364 · 3층' },
     { s: '14:30', e: '15:15', t: '퍼스널 AI 및 사운드 Q&A', v: 'lahaina34' },
     { s: '16:00', e: '17:00', t: 'Day 2 데모', v: 'monarchy57' },
     { s: '16:30', e: '20:30', t: '석식', v: null, place: "Leilani's (리조트 밖)" },
@@ -73,7 +77,7 @@ window.SCHEDULE = [
   { date: '2026-09-24', day: 'Day 3 · 목', items: [
     { s: '06:30', e: '07:30', t: 'Sunrise Yoga with The rOMing Yogi', v: 'halonaKai' },
     { s: '06:30', e: '08:00', t: '조식', v: 'sunsetTerrace' },
-    { s: '08:00', e: '08:45', t: '지아드 아스가르 – 퍼스널 AI 미디어 라운드테이블', sub: 'Ziad Asghar, SVP & GM, XR, Wearables and Personal AI', v: 'lahainaTower', room: 'Executive Meeting Room 479 · 4층' },
+    { s: '08:00', e: '08:45', t: '지아드 아스가르 – 퍼스널 AI 미디어 라운드테이블', sub: 'Ziad Asghar, SVP & GM, XR, Wearables and Personal AI', v: 'lahElev', room: 'Executive Meeting Room 479 · 4층' },
     { s: '09:00', e: '11:00', t: 'Elite Experiences', v: 'monarchy14' },
     { s: '10:30', e: '12:00', t: '데모 (Day 2와 동일)', v: 'monarchy57' },
     { s: '12:00', e: '13:30', t: '중식', v: 'sunsetTerrace' },
