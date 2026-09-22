@@ -315,11 +315,21 @@ function startGps() {
 }
 $('#gpsbtn').onclick = () => { if (pos?.manual) { pos = gps ? {...gps} : null; $('#gpsbtn').textContent = gps?`📡 ±${Math.round(gps.acc)}m`:'📡 검색 중…'; drawMe(); update(); renderNow(); }
   else if (!watchId) startGps(); else if (pos) fitView([geoToPx(pos)]); };
-$('#compassbtn').onclick = async () => {
-  try { if (typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission) { if (await DeviceOrientationEvent.requestPermission()!=='granted') throw 0; }
-    window.addEventListener('deviceorientationabsolute', onOrient, true); window.addEventListener('deviceorientation', onOrient, true); $('#compassbtn').textContent='🧭 ON'; $('#compassbtn').classList.add('on');
-  } catch { $('#compassbtn').textContent='🧭 ✕'; }
-};
+// 나침반: Android(갤럭시)는 권한 없이 즉시 ON. iOS는 사용자 터치가 있어야 권한 요청이 가능하므로
+// 첫 터치(위치 허용 직후 어떤 탭이든)에 자동으로 요청 → 허용되면 ON.
+let compassOn = false;
+async function enableCompass() {
+  if (compassOn) return true;
+  try {
+    if (typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission) { if (await DeviceOrientationEvent.requestPermission()!=='granted') throw 0; }
+    window.addEventListener('deviceorientationabsolute', onOrient, true); window.addEventListener('deviceorientation', onOrient, true);
+    compassOn = true; $('#compassbtn').textContent='🧭 ON'; $('#compassbtn').classList.add('on'); return true;
+  } catch { $('#compassbtn').textContent='🧭 ✕'; return false; }
+}
+$('#compassbtn').onclick = enableCompass;
+if (typeof DeviceOrientationEvent==='undefined' || !DeviceOrientationEvent.requestPermission) enableCompass();   // Android
+else { const once = () => { enableCompass(); document.removeEventListener('touchend', once, true); document.removeEventListener('click', once, true); };
+  document.addEventListener('touchend', once, true); document.addEventListener('click', once, true); }             // iOS
 function onOrient(e) { let h=null; if (e.webkitCompassHeading!=null) h=e.webkitCompassHeading; else if (e.absolute && e.alpha!=null) h=(360-e.alpha)%360; if (h!=null) { heading=h; drawMe(); update(); } }
 
 function drawMe() {
