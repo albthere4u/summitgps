@@ -64,8 +64,8 @@
   .lbl.tgt { fill:#b00020; font-size:30px; }
   .me { fill:#2f80ff; stroke:#fff; stroke-width:4; } .meacc { fill:#2f80ff22; stroke:#2f80ff; stroke-width:2; }
   .me.manual { fill:#8e44ad; }
-  .cal { fill:none; stroke:#3ddc84; stroke-width:3; }
-  .cal-t { fill:#0b5a2a; font-size:20px; font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:4px; }
+  .cal { fill:none; stroke:#3ddc84; stroke-width:3; display:none; } .debug .cal { display:block; }
+  .cal-t { fill:#0b5a2a; font-size:20px; font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:4px; display:none; } .debug .cal-t { display:block; }
   /* schedule */
   #sched { padding:12px 14px; }
   .days { display:flex; gap:6px; margin-bottom:10px; }
@@ -256,7 +256,14 @@ function routeTo(k) {
 const svg = $('#svg'), NS='http://www.w3.org/2000/svg';
 const el = (t,a,txt) => { const e=document.createElementNS(NS,t); for (const k in a) e.setAttribute(k,a[k]); if (txt!=null) e.textContent=txt; return e; };
 let VB = [0,0,IMG.w,IMG.h];
-const setVB = () => svg.setAttribute('viewBox', VB.join(' '));
+// 기본 뷰 = 안내도 가로를 화면 가로에 맞춤. 그보다 축소 불가, 안내도 밖으로 이동 불가.
+function clampVB() {
+  const r = svg.getBoundingClientRect(), asp = r.width && r.height ? r.width/r.height : 1;
+  let w = Math.min(VB[2], IMG.w), h = w/asp;
+  let x = Math.max(0, Math.min(IMG.w-w, VB[0])), y = h>=IMG.h ? (IMG.h-h)/2 : Math.max(0, Math.min(IMG.h-h, VB[1]));
+  VB = [x,y,w,h];
+}
+const setVB = () => { clampVB(); svg.setAttribute('viewBox', VB.join(' ')); };
 svg.appendChild(el('image',{ href:IMG.src, x:0, y:0, width:IMG.w, height:IMG.h }));
 const gEdges = el('g',{}), route2 = el('polyline',{class:'route2',points:''}), routeEl = el('polyline',{class:'route',points:''}), gCal = el('g',{}), gPins = el('g',{});
 svg.append(gEdges, route2, routeEl, gCal, gPins);
@@ -287,10 +294,10 @@ svg.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); drag0=nul
 svg.addEventListener('wheel', e => { e.preventDefault(); const z=e.deltaY>0?1.15:0.87, r=svg.getBoundingClientRect(), fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height; VB=[VB[0]+VB[2]*fx*(1-z), VB[1]+VB[3]*fy*(1-z), VB[2]*z, VB[3]*z]; setVB(); }, {passive:false});
 function clientToPx(e) { const r=svg.getBoundingClientRect(); const sw=VB[2]/r.width, sh=VB[3]/r.height, s=Math.max(sw,sh); const ox=(r.width-VB[2]/s)/2, oy=(r.height-VB[3]/s)/2; return [VB[0]+(e.clientX-r.left-ox)*s, VB[1]+(e.clientY-r.top-oy)*s]; }
 function fitView(pts) {
-  if (!pts || !pts.length) { VB=[0,0,IMG.w,IMG.h]; setVB(); return; }
-  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]); let x0=Math.min(...xs)-200, y0=Math.min(...ys)-200, w=Math.max(...xs)-x0+200, h=Math.max(...ys)-y0+200;
-  const r=svg.getBoundingClientRect(), asp=r.width/r.height; if (w/h<asp) { const nw=h*asp; x0-=(nw-w)/2; w=nw; } else { const nh=w/asp; y0-=(nh-h)/2; h=nh; }
-  w=Math.max(w,700); h=Math.max(h,700/asp); VB=[x0,y0,w,h]; setVB();
+  if (!pts || !pts.length) { VB=[0,0,IMG.w,IMG.h]; setVB(); return; }   // 기본(가로 맞춤) 뷰
+  // 특정 지점들을 중심으로 현재 배율 유지한 채 이동 (확대 상태였다면 그 배율 그대로)
+  const cx = pts.reduce((a,p)=>a+p[0],0)/pts.length, cy = pts.reduce((a,p)=>a+p[1],0)/pts.length;
+  VB = [cx-VB[2]/2, cy-VB[3]/2, VB[2], VB[3]]; setVB();
 }
 
 // ---------- modes: 📍여기 (수동 위치) / ⚙보정 ----------
@@ -367,7 +374,7 @@ function drawMe() {
 function goTo(k) {
   target=k; showPanel('guide');
   for (const kk in nodeEls) { nodeEls[kk].querySelector('circle').classList.toggle('tgt',kk===k); nodeEls[kk].querySelector('text').classList.toggle('tgt',kk===k); }
-  fitView(pos ? [geoToPx(pos), N[k].P] : [N[k].P]); update();
+  if (VB[2] < IMG.w-1) fitView(pos ? [geoToPx(pos), N[k].P] : [N[k].P]); else fitView(); update();
 }
 function update() {
   if (!target) return;
@@ -393,6 +400,7 @@ if (q.get('pos')) { const [la,lg]=q.get('pos').split(',').map(Number); pos={lat:
 if (q.get('tab')) showPanel(q.get('tab'));
 if (q.get('debug')) svg.classList.add('debug');   // ?debug=1 → 도보 그래프 표시
 setInterval(()=>{ tick(); renderNow(); if ($('#sched').classList.contains('on')) renderSched(); }, 30000);
+window.addEventListener('resize', setVB);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
 </body>
