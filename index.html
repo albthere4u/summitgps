@@ -416,7 +416,7 @@ else { const once = () => { enableCompass(); document.removeEventListener('touch
 function onOrient(e) { let h=null; if (e.webkitCompassHeading!=null) h=e.webkitCompassHeading; else if (e.absolute && e.alpha!=null) h=(360-e.alpha)%360; if (h!=null) { heading=h; drawMe(); update(); } }
 
 let meScale = 1;
-function scaleMe() { meScale = Math.max(0.35, Math.min(1, (shownVB?shownVB[2]:IMG.w)/IMG.w)); meG.setAttribute('transform', meG.dataset.base ? meG.dataset.base+` scale(${meScale.toFixed(3)})` : ''); }
+function scaleMe() { meScale = 2*Math.max(0.18, Math.min(1, (shownVB?shownVB[2]:IMG.w)/IMG.w)); meG.setAttribute('transform', meG.dataset.base ? meG.dataset.base+` scale(${meScale.toFixed(3)})` : ''); }
 function drawMe() {
   if (!pos) { meG.setAttribute('visibility','hidden'); return; }
   const P = geoToPx(pos), inside = P[0]>-100&&P[0]<IMG.w+100&&P[1]>-100&&P[1]<IMG.h+100;
