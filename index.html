@@ -255,7 +255,7 @@ function renderSched() {
     const v = N[k]; if (!v.venue) continue;
     const uses = []; S.forEach(d => d.items.forEach(i => { if (i.v===k) uses.push(`${d.day.split(' ')[0]} ${i.s} ${i.t}${i.room?` (${i.room})`:''}`); }));
     const d = pos ? routeTo(k) : null;
-    html += `<div class="card"><div class="body"><div class="row"><div class="title" style="margin:0">${v.name}</div>${fl(v.floor)}<div class="until">${d?`${Math.round(d.total)}m`:''}</div></div>
+    html += `<div class="card ${k===target?'live':''}"><div class="body"><div class="row">${k===target?'<div class="tag">현재 목적지</div>':''}<div class="title" style="margin:0">${v.name}</div>${fl(v.floor)}<div class="until">${d?`${Math.round(d.total)}m`:''}</div></div>
       ${v.note?`<div class="sub">${v.note}</div>`:''}
       ${uses.length?`<div class="sub" style="margin-top:4px">${uses.map(u=>'· '+u).join('<br>')}</div>`:''}</div>
       <button class="go" onclick="goTo('${k}')">여기\n가기</button></div>`;
@@ -431,7 +431,9 @@ $('#gatebtn').onclick = async () => {
   try { navigator.geolocation?.getCurrentPosition(()=>{}, ()=>{}, { enableHighAccuracy:true, timeout:10000 }); } catch {}
   startGps();
   await enableCompass();
-  showPanel('guide');   // 길을 잃고 앱을 연 상황: 바로 지도 + 현재/다음 세션 자동 목적지
+  // 다음 세션을 목적지로 잡아두되(지도 탭 열면 경로 바로 표시), 화면은 장소별 안내로
+  const a = autoTarget(); if (a) setTarget(a);
+  showPanel('sched');
 };
 // 이후에도 위치가 없거나 거부 상태면 터치 시 재요청
 document.addEventListener('touchend', () => { if (!$('#gate').classList.contains('show') && (!pos || gpsDenied)) startGps(); }, { capture:true, passive:true });
@@ -467,9 +469,13 @@ function drawMe() {
 }
 
 // ---------- navigate ----------
-function goTo(k) {
-  target=k; lastEdge=null; showPanel('guide');
+function setTarget(k) {
+  target=k; lastEdge=null;
   for (const kk in nodeEls) { nodeEls[kk].querySelector('circle').classList.toggle('tgt',kk===k); nodeEls[kk].querySelector('text').classList.toggle('tgt',kk===k); }
+  update();
+}
+function goTo(k) {
+  setTarget(k); showPanel('guide');
   if (VB[2] < IMG.w-1) fitView(pos ? [geoToPx(pos), N[k].P] : [N[k].P]); else fitView(); update();
 }
 function update() {
