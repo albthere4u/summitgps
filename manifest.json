@@ -3,7 +3,7 @@
   "short_name": "Summit GPS",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#CC0000",
+  "background_color": "#0b1a3a",
   "theme_color": "#CC0000",
   "icons": [{ "src": "assets/icon.png", "sizes": "512x512", "type": "image/png" }]
 }
